@@ -1,0 +1,30 @@
+name: Release Desktop Packages
+
+# 推送形如 v0.8.0 的 tag 时，构建 Windows / Linux 离线包并发布到 GitHub Release。
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Build offline packages
+        run: python scripts/package.py
+
+      - name: Upload packages to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.zip
+            dist/*.tar.gz
+          generate_release_notes: true

@@ -8,6 +8,7 @@
     "build:dev": "python scripts/build.py --target=dev",
     "build:web": "python scripts/build.py --target=web",
     "build:desktop": "python scripts/build.py --target=desktop",
+    "package": "python scripts/package.py",
     "check": "python scripts/build.py --check",
     "verify": "python scripts/verify.py",
     "test": "python scripts/verify.py --browser",
