@@ -23,4 +23,4 @@ jobs:
           node-version: '22'
 
       - name: Deploy to EdgeOne Pages
-        run: npx edgeone makers deploy ./web -n repoflow-hub -e production -t ${{ secrets.EDGEONE_API_TOKEN }}
+        run: npx edgeone makers deploy ./web -n repoflow-hub -e production -a overseas -t ${{ secrets.EDGEONE_API_TOKEN }}

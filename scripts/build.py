@@ -101,7 +101,9 @@ def postprocess(html, cfg):
         if '</style>' not in html:
             raise SystemExit('desktop 目标找不到 </style>')
         html = html.replace('</style>', OFFLINE_FONT_CSS + '</style>', 1)
-        stats['externalResourceTags'] = len(re.findall(r'<link[^>]+href=|<script[^>]+src=', html))
+        # 只统计真正的外部引用；内联 data: 图标不算外部资源
+        stats['externalResourceTags'] = len(re.findall(
+            r'<link[^>]+href="(?:https?:)?//|<script[^>]+src="(?:https?:)?//', html))
         if stats['externalResourceTags']:
             raise SystemExit('desktop 产物仍含外部资源引用')
     return html, stats
