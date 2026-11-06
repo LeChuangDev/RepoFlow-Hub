@@ -1,8 +1,10 @@
 name: Deploy to EdgeOne Pages
 
+# 默认部署由 EdgeOne 的 Git 导入项目接管：push main 后平台自动拉取并发布。
+# 本 workflow 仅保留为手动兜底的 CLI 部署，注意两点：
+#   1. 需要仓库 secret EDGEONE_API_TOKEN，否则 CLI 会报 "No API token provided" 直接退出；
+#   2. CLI 只能部署「直接上传」类型的项目，不能部署 EdgeOne Git 导入项目。
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -23,4 +25,4 @@ jobs:
           node-version: '22'
 
       - name: Deploy to EdgeOne Pages
-        run: npx edgeone makers deploy ./web -n repoflow-hub -e production -a overseas -t ${{ secrets.EDGEONE_API_TOKEN }}
+        run: npx edgeone@0.1.47 makers deploy ./web -n repoflow-hub -e production -a overseas -t ${{ secrets.EDGEONE_API_TOKEN }}
