@@ -13,7 +13,8 @@
     "test": "python scripts/verify.py --browser",
     "bench": "python scripts/verify.py --bench",
     "sanitize": "python templates/sanitize.py",
-    "release": "python scripts/build.py && python scripts/verify.py --browser && python templates/sanitize.py"
+    "release": "python scripts/build.py && python scripts/verify.py --browser && python templates/sanitize.py",
+    "deploy": "scripts/deploy-edgeone.bat"
   },
   "engines": {
     "node": ">=18"

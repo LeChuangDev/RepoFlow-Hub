@@ -1,0 +1,26 @@
+name: Deploy to EdgeOne Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Build web target
+        run: python scripts/build.py --target=web
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Deploy to EdgeOne Pages
+        run: npx edgeone makers deploy ./web -n repoflow-hub -e production -t ${{ secrets.EDGEONE_API_TOKEN }}
