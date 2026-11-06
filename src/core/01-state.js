@@ -9,7 +9,7 @@ const S = {view:'dashboard', filter:'all', selected:new Set(), demo:false, theme
   repoLimit:PAGE_SIZE, autoLoadMore:false,
   markEditId:null, markDraft:null,
   removedRepos:new Set(), trash:[], pushRows:[], pushMode:'reflog', removeTab:'commits',
-  authed:false, authMode:'', edition:EDITION, live:false,
+  authed:false, authMode:'', edition:EDITION, live:false, patPlatform:'github',
   lastPicked:null, sdSel:-1, sdItems:[]};
 const LS_KEY='repoflow-hub-v2';
 /* 首屏进入时是否带着显式路由（分享链接）：显式路由优先于本机上次偏好 */

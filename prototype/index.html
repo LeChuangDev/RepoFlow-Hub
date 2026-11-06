@@ -673,6 +673,7 @@ textarea.inp{resize:vertical;min-height:78px;line-height:1.55}
 .gate-dot{width:20px;height:20px;border-radius:6px;flex:none;background:rgba(255,255,255,.22);
   display:grid;place-items:center;font-size:10px;font-weight:700}
 .gate-pat{display:none;text-align:left;margin:2px 0 10px}
+.gate-pat-title{font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:7px}
 .gate-pat .input-apple{width:100%;margin-bottom:8px}
 .gate-pat-hint{font-size:10.5px;color:var(--text-3);line-height:1.55;margin-bottom:10px}
 .gate-pat-hint a{color:var(--primary);text-decoration:underline}
@@ -706,11 +707,12 @@ textarea.inp{resize:vertical;min-height:78px;line-height:1.55}
     <h1>RepoFlow Hub</h1>
     <p>面向独立开发者的多仓库 Git 管理桌面工具</p>
     <div class="gate-author">作者 · 樂創</div>
-    <div class="gate-note"><b>尚未连接任何账号。</b>连接后才会读取你的仓库列表。页面只与 <code>api.github.com</code> 通信，令牌仅保存在当前页面内存，不写入磁盘、不进入网址，刷新即失效。GitHub 的 OAuth 端点不允许跨域，静态站点无法直接弹出授权页，因此改用访问令牌方式。</div>
+    <div class="gate-note"><b>尚未连接任何账号。</b>连接后才会读取你的仓库列表。GitHub 模式只与 <code>api.github.com</code> 通信，Gitee 模式只与 <code>gitee.com</code> 通信；令牌仅保存在当前页面内存，不写入磁盘、不进入网址，刷新即失效。两家平台的 OAuth 端点都不允许跨域，静态站点无法直接弹出授权页，因此改用访问令牌方式。</div>
     <button class="gate-btn" data-login="github"><span class="gate-dot">GH</span>使用 GitHub 访问令牌连接</button>
     <div class="gate-pat" id="gatePat">
+      <div class="gate-pat-title" id="gatePatTitle">粘贴 GitHub 访问令牌（仅保存在本页内存）</div>
       <input class="input-apple" id="gatePatInput" type="password" autocomplete="off" spellcheck="false" placeholder="ghp_… 或 github_pat_…">
-      <div class="gate-pat-hint">在 GitHub → Settings → Developer settings →
+      <div class="gate-pat-hint" id="gatePatHint">在 GitHub → Settings → Developer settings →
         <a href="https://github.com/settings/tokens?type=beta" target="_blank" rel="noopener noreferrer">Fine-grained tokens</a>
         新建，只勾选 <b>Contents: Read</b> 与目标仓库即可。令牌不会离开本页。</div>
       <div class="gate-pat-row">
@@ -720,7 +722,7 @@ textarea.inp{resize:vertical;min-height:78px;line-height:1.55}
       <div class="gate-status" id="gatePatStatus"></div>
     </div>
     <button class="gate-btn ghost" data-login="demo"><span class="gate-dot">DM</span>浏览演示数据（中性示例，不代表真实账号）</button>
-    <button class="gate-btn ghost" data-login="gitee"><span class="gate-dot">GE</span>Gitee 登录（尚未接入）</button>
+    <button class="gate-btn ghost" data-login="gitee"><span class="gate-dot">GE</span>使用 Gitee 私人令牌连接</button>
     <div class="gate-foot"><span id="gateEdition"></span> · 推送 / 删除等写操作仍为原型模拟，不会改动任何仓库</div>
   </div>
 </div>
@@ -831,7 +833,7 @@ textarea.inp{resize:vertical;min-height:78px;line-height:1.55}
         <div class="page-head">
           <div>
             <div class="page-title">全局驾驶舱</div>
-            <div class="page-desc">一次看清所有仓库的本地状态、远端状态与体积风险。数据来自本机 <code style="font-size:11.5px">C:\Users\zhang\Desktop\Project</code> 只读扫描。</div>
+            <div class="page-desc" id="dashDesc">一次看清所有仓库的本地状态、远端状态与体积风险。数据来自本机 <code style="font-size:11.5px">C:\Users\zhang\Desktop\Project</code> 只读扫描。</div>
           </div>
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
             <button class="btn btn-ghost" id="btnMarks" style="height:32px;padding:0 12px;font-size:11.5px">自定义项目图标</button>
@@ -2250,7 +2252,7 @@ const S = {view:'dashboard', filter:'all', selected:new Set(), demo:false, theme
   repoLimit:PAGE_SIZE, autoLoadMore:false,
   markEditId:null, markDraft:null,
   removedRepos:new Set(), trash:[], pushRows:[], pushMode:'reflog', removeTab:'commits',
-  authed:false, authMode:'', edition:EDITION, live:false,
+  authed:false, authMode:'', edition:EDITION, live:false, patPlatform:'github',
   lastPicked:null, sdSel:-1, sdItems:[]};
 const LS_KEY='repoflow-hub-v2';
 /* 首屏进入时是否带着显式路由（分享链接）：显式路由优先于本机上次偏好 */
@@ -2832,11 +2834,18 @@ function renderGaps(){
 /* ================= v4 · 全局检索 ================= */
 function searchMatch(q,repo,rng){
   const term=q.trim().toLowerCase();
+  const cutoff=n=>{const d=new Date();d.setDate(d.getDate()-n);return d.toISOString().slice(0,10);};
   return searchSource().filter(x=>{
     if(repo!=='all'&&x.repo!==repo)return false;
-    if(rng==='week'&&x.date<'2026-11-03')return false;
-    if(rng==='month'&&x.date<'2026-11-01')return false;
-    if(rng==='older'&&x.date>='2026-11-01')return false;
+    if(S.live){
+      if(rng==='week'&&x.date<cutoff(7))return false;
+      if(rng==='month'&&x.date<cutoff(30))return false;
+      if(rng==='older'&&x.date>=cutoff(30))return false;
+    }else{
+      if(rng==='week'&&x.date<'2026-11-03')return false;
+      if(rng==='month'&&x.date<'2026-11-01')return false;
+      if(rng==='older'&&x.date>='2026-11-01')return false;
+    }
     if(!term)return true;
     return (x.msg+' '+x.sha+' '+x.repo+' '+x.author).toLowerCase().includes(term);
   });
@@ -3227,7 +3236,7 @@ function renderAccountCards(){
     ?'<div class="notice" style="margin-bottom:var(--s4)"><b>离线 Windows 版：</b>本版本不连接网站、不需要任何账号，所有仓库信息来自本机文件。账号与授权页仅用于说明，登录入口已停用。</div>':'';
   if(!S.accounts.length){
     $('#accountCards').innerHTML=offlineNote+'<div class="empty">当前没有关联任何账号。登录后才会读取仓库列表。'
-      +(EDITION==='desktop'?'':'<div class="action-row" style="justify-content:center;margin-top:var(--s4)"><button class="btn btn-primary" data-login="github">连接 GitHub</button><button class="btn btn-ghost" data-login="demo">演示数据</button><button class="btn btn-ghost" data-login="gitee">Gitee（未接入）</button></div>')
+      +(EDITION==='desktop'?'':'<div class="action-row" style="justify-content:center;margin-top:var(--s4)"><button class="btn btn-primary" data-login="github">连接 GitHub</button><button class="btn btn-ghost" data-login="gitee">连接 Gitee</button><button class="btn btn-ghost" data-login="demo">演示数据</button></div>')
       +'</div>';
     $('#acctSummary').textContent='0 个账号 · 0 个已授权';
     renderSideAccount();
@@ -3257,7 +3266,7 @@ function renderAccountCards(){
   $$('[data-revoke]').forEach(b=>b.onclick=()=>{
     const a=S.accounts.find(x=>x.id===b.dataset.revoke);
     if(!a)return;
-    if(a.id===GH_ACCOUNT_ID){logoutAll();return;}
+    if(a.id===GH_ACCOUNT_ID||a.id===GITEE_ACCOUNT_ID){logoutAll();return;}
     a.state='revoked';a.store='已清除密钥链条目';renderAccountCards();renderSideAccount();toast('已撤销 '+esc(a.label)+' 的授权。','warn');
   });
   $('#acctSummary').textContent=S.accounts.length+' 个账号 · '+S.accounts.filter(a=>a.state==='active').length+' 个已授权';
@@ -3720,17 +3729,73 @@ function renderLiveNote(){
   const el=$('#liveNote');if(el)el.style.display=S.live?'flex':'none';
 }
 
-function applyGitHubSession(user,repos){
+function applyLiveSession(platform,user,repos){
+  const gh=platform==='github';
+  const id=gh?GH_ACCOUNT_ID:GITEE_ACCOUNT_ID;
+  const login=user.login||user.name||'unknown';
   S.demo=false;S.live=true;
-  const acct={id:GH_ACCOUNT_ID,platform:'github',host:'github.com',user:user.login||'unknown',
-    label:'GitHub · '+(user.login||'unknown'),state:'active',
-    scopes:['repo（按令牌授权范围）'],color:'#6C63FF',short:'GH',
+  const acct={id:id,platform:platform,host:gh?'github.com':'gitee.com',user:login,
+    label:(gh?'GitHub · ':'Gitee · ')+login,state:'active',
+    scopes:[gh?'repo（按令牌授权范围）':'projects（按令牌授权范围）'],
+    color:gh?'#6C63FF':'#C71D23',short:gh?'GH':'GE',
     exp:'随令牌失效',store:'仅本页内存 · 刷新即失效',avatar:user.avatar_url||''};
   S.accounts=[acct];
-  S.activeAccount=GH_ACCOUNT_ID;S.authed=true;S.authMode='github';
-  ACCOUNT_REPOS[GH_ACCOUNT_ID]=repos.map(r=>r.id);
+  S.activeAccount=id;S.authed=true;S.authMode=platform;
+  ACCOUNT_REPOS[id]=repos.map(r=>r.id);
   REPOS.length=0;repos.forEach(r=>REPOS.push(r));
   S.removedRepos.clear();S.selected.clear();S.repoLimit=PAGE_SIZE;
+}
+function applyGitHubSession(user,repos){applyLiveSession('github',user,repos);}
+
+/* Gitee：OAuth 端点同样不支持跨域，但开放 API 允许跨域（ACAO *），
+   因此同样使用用户自带的私人令牌。Gitee API 只接受 access_token 查询参数，
+   令牌随 HTTPS 请求发往 gitee.com，不进入页面地址栏、不落盘。 */
+const GITEE_API='https://gitee.com/api/v5';
+const GITEE_ACCOUNT_ID='gitee-live';
+let GITEE_TOKEN='';
+
+async function giteeGet(path,token){
+  const ctl=new AbortController();
+  const timer=setTimeout(()=>ctl.abort(),20000);
+  const sep=path.includes('?')?'&':'?';
+  try{
+    const res=await fetch(GITEE_API+path+sep+'access_token='+encodeURIComponent(token),{
+      headers:{'Accept':'application/json'},signal:ctl.signal,cache:'no-store'});
+    if(res.status===401)throw new Error('Gitee 令牌无效或已过期（HTTP 401），请重新生成');
+    if(res.status===403)throw new Error('令牌权限不足或触发频率限制（HTTP 403）');
+    if(!res.ok)throw new Error('Gitee 接口返回 HTTP '+res.status);
+    return await res.json();
+  }catch(err){
+    if(err.name==='AbortError')throw new Error('连接 Gitee 超时，请检查网络后重试');
+    if(err instanceof TypeError)throw new Error('无法连接 gitee.com，请检查网络或代理设置');
+    throw err;
+  }finally{clearTimeout(timer);}
+}
+
+function giteeRepoToLocal(r){
+  const mb=Math.max(.05,(Number(r.size)||0)/1024);
+  return {
+    id:'ge-'+r.id,name:r.name,group:r.language||'未分类',remote:r.full_name||r.path||r.name,
+    branch:r.default_branch||'master',
+    date:String(r.pushed_at||r.updated_at||r.created_at||'').slice(0,10),
+    msg:r.description||'（该仓库没有简介）',
+    size:mb>=1?mb.toFixed(1)+' MB':Math.max(1,Math.round(mb*1024))+' KB',sizeMB:mb,
+    files:0,branches:1,attrs:false,kind:ghKindOf(r.language),live:true,
+    demo:{dirty:0,ahead:0,pr:0}
+  };
+}
+
+async function giteeLogin(rawToken){
+  const token=String(rawToken||'').trim();
+  if(!ghTokenFormatOk(token))throw new Error('令牌格式不正确：Gitee 私人令牌应为 32 位以上的字母、数字或下划线组合');
+  const user=await giteeGet('/user',token);
+  const list=await giteeGet('/user/repos?per_page=100&sort=updated&visibility=all',token);
+  const repos=(Array.isArray(list)?list:[]).map(giteeRepoToLocal);
+  GITEE_TOKEN=token;
+  applyLiveSession('gitee',user,repos);
+  hideGate();showPatPanel(false);renderAccountCards();renderSideAccount();renderAll();renderDemoState();renderLiveNote();rerenderRendered();
+  toast('已连接 Gitee <b>@'+esc(user.login||user.name||'')+'</b>，读取到 '+repos.length+' 个仓库；令牌只保存在本页内存。','success');
+  return {user,repos};
 }
 
 async function githubLogin(rawToken){
@@ -3747,10 +3812,28 @@ async function githubLogin(rawToken){
 }
 
 function githubLogout(){
-  GH_TOKEN='';
+  GH_TOKEN='';GITEE_TOKEN='';
   S.live=false;
   delete ACCOUNT_REPOS[GH_ACCOUNT_ID];
+  delete ACCOUNT_REPOS[GITEE_ACCOUNT_ID];
   REPOS.length=0;DEMO_REPOS.forEach(r=>REPOS.push(Object.assign({},r)));
+}
+
+/* 同步按钮：真实连接下重新拉取仓库列表（只读），不是本地 git fetch */
+async function refreshLiveRepos(){
+  if(!S.live)return 0;
+  const ge=S.accounts[0]&&S.accounts[0].platform==='gitee';
+  const token=ge?GITEE_TOKEN:GH_TOKEN;
+  if(!token)throw new Error('令牌已失效，请退出后重新连接');
+  const list=await (ge
+    ?giteeGet('/user/repos?per_page=100&sort=updated&visibility=all',token)
+    :ghGet('/user/repos?per_page=100&affiliation=owner&sort=updated',token));
+  const repos=(Array.isArray(list)?list:[]).map(ge?giteeRepoToLocal:ghRepoToLocal);
+  REPOS.length=0;repos.forEach(r=>REPOS.push(r));
+  ACCOUNT_REPOS[S.activeAccount]=repos.map(r=>r.id);
+  S.selected.clear();
+  renderAll();renderSideAccount();renderDemoState();rerenderRendered();
+  return repos.length;
 }
 
 function enterDemoMode(){
@@ -3764,12 +3847,23 @@ function enterDemoMode(){
   toast('已进入演示模式：以下为中性示例数据，不是你的账号，也不会读取任何远端仓库。','warn');
 }
 
-function showPatPanel(on){
+function renderPatHint(){
+  const ge=S.patPlatform==='gitee';
+  const title=$('#gatePatTitle'),input=$('#gatePatInput'),hint=$('#gatePatHint');
+  if(title)title.textContent=ge?'粘贴 Gitee 私人令牌（仅保存在本页内存）':'粘贴 GitHub 访问令牌（仅保存在本页内存）';
+  if(input)input.placeholder=ge?'Gitee 私人令牌（32 位以上字符）':'ghp_… 或 github_pat_…';
+  if(hint)hint.innerHTML=ge
+    ?'在 Gitee → 设置 → <a href="https://gitee.com/personal_access_tokens" target="_blank" rel="noopener noreferrer">私人令牌</a> 生成，只勾选 <b>projects</b> 权限即可。令牌随 HTTPS 只发往 gitee.com。'
+    :'在 GitHub → Settings → Developer settings → <a href="https://github.com/settings/tokens?type=beta" target="_blank" rel="noopener noreferrer">Fine-grained tokens</a> 新建，只勾选 <b>Contents: Read</b> 与目标仓库即可。令牌不会离开本页。';
+}
+
+function showPatPanel(on,platform){
   const panel=$('#gatePat');if(!panel)return;
+  if(platform)S.patPlatform=platform;
   if(on)showGate();
   panel.style.display=on?'block':'none';
   if(on){
-    setPatStatus('');
+    renderPatHint();setPatStatus('');
     const input=$('#gatePatInput');
     if(input)setTimeout(()=>input.focus(),50);
   }
@@ -3788,7 +3882,8 @@ async function submitPat(){
   if(!token){setPatStatus('请先粘贴访问令牌','err');return;}
   btn.disabled=true;setPatStatus('正在校验令牌并读取仓库列表…');
   try{
-    await githubLogin(token);
+    if(S.patPlatform==='gitee')await giteeLogin(token);
+    else await githubLogin(token);
     input.value='';
   }catch(err){
     setPatStatus(err.message||'登录失败','err');
@@ -3889,11 +3984,16 @@ $$('[data-theme-set]').forEach(b=>b.onclick=()=>applyTheme(b.dataset.themeSet));
 /* 数据来源切换的界面部分单独抽出，供浏览器前进/后退恢复状态时复用 */
 function renderDemoState(){
   $('#segDemo').classList.toggle('on',S.demo); $('#segReal').classList.toggle('on',!S.demo);
+  const desc=$('#dashDesc');
+  if(desc)desc.innerHTML=S.live
+    ? '实时读取你账号下的仓库列表（只读）。提交历史、CI、通知与推送记录仍为内置示例，不会执行任何 Git 写操作。'
+    :'一次看清所有仓库的本地状态、远端状态与体积风险。数据来自本机 <code style="font-size:11.5px">C:\\Users\\zhang\\Desktop\\Project</code> 只读扫描。';
+  const liveHost=(S.accounts[0]&&S.accounts[0].platform==='gitee')?'Gitee':'GitHub';
   $('#snapshotText').textContent=S.live
-    ? 'GitHub 实时快照 · '+REPOS.length+' 个仓库 · 只读'
+    ? liveHost+' 实时快照 · '+REPOS.length+' 个仓库 · 只读'
     : S.demo?'演示态 · 模拟脏工作区 / 未推送 / PR 数据 · 2026-11-06':'实测快照 · 2026-11-06 14:37 · '+REPOS.length+' 个仓库';
   $('#timelineNote').innerHTML=S.live
-    ? '数据来自 GitHub REST API（只读）：脏工作区、未推送提交与 PR 数量需要本机 git 才能得知，因此统一显示 0；推送 / 删除等写操作在原型里仍为模拟。'
+    ? '数据来自 '+liveHost+' 开放 API（只读）：脏工作区、未推送提交与 PR 数量需要本机 git 才能得知，因此统一显示 0；推送 / 删除等写操作在原型里仍为模拟。'
     : S.demo
     ? '当前为<b>演示态</b>：脏工作区、未推送提交与 PR 数量为模拟值，用于验证筛选器、卡片状态与批量操作栏的界面表现；不是本机真实 Git 状态。'
     : '本机 6 个仓库全部处于 <b>clean</b> 状态且仅有 main 分支，因此「未提交变更 / 未推送 / 分支差异」三类卡片数据均为 0。切换「演示态」可查看这些状态出现时的界面表现。';
@@ -3902,12 +4002,21 @@ function setDemo(on){
   S.demo=on;renderDemoState();
   S.selected.clear(); rerenderRendered(); renderSideAccount(); save(); writeHash(false);
 }
-$('#segDemo').onclick=()=>setDemo(true);
+$('#segDemo').onclick=()=>{
+  if(S.live){toast('已连接远端只读数据，退出登录后才能切换到演示态。','warn');return;}
+  setDemo(true);
+};
 $('#segReal').onclick=()=>setDemo(false);
 $('#syncBtn').onclick=()=>{
   if($('.scroll').classList.contains('syncing'))return;
   setSyncing(true);
-  setTimeout(()=>{setSyncing(false);toast('已刷新 6 个仓库的本地状态（原型演示，未执行真实 Git 命令）。','success');},900);
+  if(S.live){
+    refreshLiveRepos()
+      .then(n=>{setSyncing(false);toast('已重新读取 '+n+' 个仓库（只读，未执行本地 git 命令）。','success');})
+      .catch(err=>{setSyncing(false);toast('同步失败：'+err.message,'warn');});
+    return;
+  }
+  setTimeout(()=>{setSyncing(false);toast('已刷新 '+REPOS.length+' 个仓库的本地状态（原型演示，未执行真实 Git 命令）。','success');},900);
 };
 /* 搜索：仅当关键词真正变化时才重建仓库网格；下拉本身始终即时更新 */
 $('#searchInput').oninput=e=>{
@@ -4023,10 +4132,10 @@ document.addEventListener('click',e=>{
   const lg=e.target.closest('[data-login]');
   if(lg){
     const v=lg.dataset.login;
-    if(v==='github'){showPatPanel(true);return;}
+    if(v==='github'){showPatPanel(true,'github');return;}
+    if(v==='gitee'){showPatPanel(true,'gitee');return;}
     if(v==='demo'){enterDemoMode();return;}
     if(v==='local'){enterLocalMode();return;}
-    toast('Gitee 真实登录尚未接入：Gitee 的 OAuth 同样需要后端换取 token。可先用 GitHub 访问令牌或演示数据。','warn');
     return;
   }
   if(e.target.closest('#gatePatSubmit')){submitPat();return;}
@@ -4460,17 +4569,25 @@ function runSelfTest(){
   t('令牌格式校验',ghTokenFormatOk('ghp_'+'a'.repeat(36))&&ghTokenFormatOk('github_pat_'+'b'.repeat(30))&&!ghTokenFormatOk('short')&&!ghTokenFormatOk('ghp_with space'),'ok');
   const sampleRepo=ghRepoToLocal({id:7,name:'demo-app',full_name:'demoOrg/demo-app',default_branch:'main',size:2048,language:'JavaScript',description:'示例',pushed_at:'2026-11-06T00:00:00Z'});
   t('API 仓库映射到仓库卡片',sampleRepo.id==='gh-7'&&sampleRepo.remote==='demoOrg/demo-app'&&sampleRepo.sizeMB===2&&sampleRepo.kind==='web'&&sampleRepo.branch==='main',sampleRepo.id);
+  const geeRepo=giteeRepoToLocal({id:9,name:'demo-gee',full_name:'demoOrg/demo-gee',default_branch:'master',size:512,language:'Python',description:'示例',updated_at:'2026-11-01T00:00:00Z'});
+  t('Gitee API 仓库映射',geeRepo.id==='ge-9'&&geeRepo.branch==='master'&&geeRepo.kind==='tool'&&geeRepo.sizeMB===0.5,geeRepo.id+' '+geeRepo.sizeMB);
+  t('Gitee 登录入口存在',typeof giteeLogin==='function');
+  t('同步按钮可刷新实时仓库',typeof refreshLiveRepos==='function');
   const liveState=S.live;S.live=true;
   t('真实模式检索源改用仓库列表',searchSource().length===REPOS.length&&searchSource().length>0&&searchSource()[0].github===true,searchSource().length);
   t('真实模式检索能命中仓库名',searchMatch(REPOS[0].name,'all','all').length>=1);
   S.live=true;renderLiveNote();
   t('真实模式显示只读提示条',$('#liveNote').style.display==='flex');
+  S.demo=false;S.live=true;$('#segDemo').click();
+  t('真实模式禁止切到演示态',S.demo===false);
   S.live=false;renderLiveNote();
   t('非真实模式隐藏只读提示条',$('#liveNote').style.display==='none');
   S.live=liveState;renderLiveNote();
-  showPatPanel(true);
+  showPatPanel(true,'github');
   t('令牌面板可展开',$('#gatePat').style.display==='block');
-  showPatPanel(false);
+  showPatPanel(true,'gitee');
+  t('Gitee 令牌面板切换文案',$('#gatePatTitle').textContent.includes('Gitee')&&$('#gatePatInput').placeholder.includes('Gitee'));
+  showPatPanel(false);S.patPlatform='github';renderPatHint();
   enterDemoMode();
   t('演示模式明确标注为示例',S.authMode==='demo'&&S.accounts.length===1&&S.accounts[0].id==='demo-mode'&&S.accounts[0].label.includes('演示'));
   logoutAll();

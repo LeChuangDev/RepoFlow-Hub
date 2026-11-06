@@ -36,11 +36,12 @@
     <h1>RepoFlow Hub</h1>
     <p>面向独立开发者的多仓库 Git 管理桌面工具</p>
     <div class="gate-author">作者 · 樂創</div>
-    <div class="gate-note"><b>尚未连接任何账号。</b>连接后才会读取你的仓库列表。页面只与 <code>api.github.com</code> 通信，令牌仅保存在当前页面内存，不写入磁盘、不进入网址，刷新即失效。GitHub 的 OAuth 端点不允许跨域，静态站点无法直接弹出授权页，因此改用访问令牌方式。</div>
+    <div class="gate-note"><b>尚未连接任何账号。</b>连接后才会读取你的仓库列表。GitHub 模式只与 <code>api.github.com</code> 通信，Gitee 模式只与 <code>gitee.com</code> 通信；令牌仅保存在当前页面内存，不写入磁盘、不进入网址，刷新即失效。两家平台的 OAuth 端点都不允许跨域，静态站点无法直接弹出授权页，因此改用访问令牌方式。</div>
     <button class="gate-btn" data-login="github"><span class="gate-dot">GH</span>使用 GitHub 访问令牌连接</button>
     <div class="gate-pat" id="gatePat">
+      <div class="gate-pat-title" id="gatePatTitle">粘贴 GitHub 访问令牌（仅保存在本页内存）</div>
       <input class="input-apple" id="gatePatInput" type="password" autocomplete="off" spellcheck="false" placeholder="ghp_… 或 github_pat_…">
-      <div class="gate-pat-hint">在 GitHub → Settings → Developer settings →
+      <div class="gate-pat-hint" id="gatePatHint">在 GitHub → Settings → Developer settings →
         <a href="https://github.com/settings/tokens?type=beta" target="_blank" rel="noopener noreferrer">Fine-grained tokens</a>
         新建，只勾选 <b>Contents: Read</b> 与目标仓库即可。令牌不会离开本页。</div>
       <div class="gate-pat-row">
@@ -50,7 +51,7 @@
       <div class="gate-status" id="gatePatStatus"></div>
     </div>
     <button class="gate-btn ghost" data-login="demo"><span class="gate-dot">DM</span>浏览演示数据（中性示例，不代表真实账号）</button>
-    <button class="gate-btn ghost" data-login="gitee"><span class="gate-dot">GE</span>Gitee 登录（尚未接入）</button>
+    <button class="gate-btn ghost" data-login="gitee"><span class="gate-dot">GE</span>使用 Gitee 私人令牌连接</button>
     <div class="gate-foot"><span id="gateEdition"></span> · 推送 / 删除等写操作仍为原型模拟，不会改动任何仓库</div>
   </div>
 </div>
@@ -161,7 +162,7 @@
         <div class="page-head">
           <div>
             <div class="page-title">全局驾驶舱</div>
-            <div class="page-desc">一次看清所有仓库的本地状态、远端状态与体积风险。数据来自本机 <code style="font-size:11.5px">C:\Users\zhang\Desktop\Project</code> 只读扫描。</div>
+            <div class="page-desc" id="dashDesc">一次看清所有仓库的本地状态、远端状态与体积风险。数据来自本机 <code style="font-size:11.5px">C:\Users\zhang\Desktop\Project</code> 只读扫描。</div>
           </div>
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
             <button class="btn btn-ghost" id="btnMarks" style="height:32px;padding:0 12px;font-size:11.5px">自定义项目图标</button>

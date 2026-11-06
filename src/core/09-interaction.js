@@ -11,11 +11,16 @@ $$('[data-theme-set]').forEach(b=>b.onclick=()=>applyTheme(b.dataset.themeSet));
 /* 数据来源切换的界面部分单独抽出，供浏览器前进/后退恢复状态时复用 */
 function renderDemoState(){
   $('#segDemo').classList.toggle('on',S.demo); $('#segReal').classList.toggle('on',!S.demo);
+  const desc=$('#dashDesc');
+  if(desc)desc.innerHTML=S.live
+    ? '实时读取你账号下的仓库列表（只读）。提交历史、CI、通知与推送记录仍为内置示例，不会执行任何 Git 写操作。'
+    :'一次看清所有仓库的本地状态、远端状态与体积风险。数据来自本机 <code style="font-size:11.5px">C:\\Users\\zhang\\Desktop\\Project</code> 只读扫描。';
+  const liveHost=(S.accounts[0]&&S.accounts[0].platform==='gitee')?'Gitee':'GitHub';
   $('#snapshotText').textContent=S.live
-    ? 'GitHub 实时快照 · '+REPOS.length+' 个仓库 · 只读'
+    ? liveHost+' 实时快照 · '+REPOS.length+' 个仓库 · 只读'
     : S.demo?'演示态 · 模拟脏工作区 / 未推送 / PR 数据 · 2026-11-06':'实测快照 · 2026-11-06 14:37 · '+REPOS.length+' 个仓库';
   $('#timelineNote').innerHTML=S.live
-    ? '数据来自 GitHub REST API（只读）：脏工作区、未推送提交与 PR 数量需要本机 git 才能得知，因此统一显示 0；推送 / 删除等写操作在原型里仍为模拟。'
+    ? '数据来自 '+liveHost+' 开放 API（只读）：脏工作区、未推送提交与 PR 数量需要本机 git 才能得知，因此统一显示 0；推送 / 删除等写操作在原型里仍为模拟。'
     : S.demo
     ? '当前为<b>演示态</b>：脏工作区、未推送提交与 PR 数量为模拟值，用于验证筛选器、卡片状态与批量操作栏的界面表现；不是本机真实 Git 状态。'
     : '本机 6 个仓库全部处于 <b>clean</b> 状态且仅有 main 分支，因此「未提交变更 / 未推送 / 分支差异」三类卡片数据均为 0。切换「演示态」可查看这些状态出现时的界面表现。';
@@ -24,12 +29,21 @@ function setDemo(on){
   S.demo=on;renderDemoState();
   S.selected.clear(); rerenderRendered(); renderSideAccount(); save(); writeHash(false);
 }
-$('#segDemo').onclick=()=>setDemo(true);
+$('#segDemo').onclick=()=>{
+  if(S.live){toast('已连接远端只读数据，退出登录后才能切换到演示态。','warn');return;}
+  setDemo(true);
+};
 $('#segReal').onclick=()=>setDemo(false);
 $('#syncBtn').onclick=()=>{
   if($('.scroll').classList.contains('syncing'))return;
   setSyncing(true);
-  setTimeout(()=>{setSyncing(false);toast('已刷新 6 个仓库的本地状态（原型演示，未执行真实 Git 命令）。','success');},900);
+  if(S.live){
+    refreshLiveRepos()
+      .then(n=>{setSyncing(false);toast('已重新读取 '+n+' 个仓库（只读，未执行本地 git 命令）。','success');})
+      .catch(err=>{setSyncing(false);toast('同步失败：'+err.message,'warn');});
+    return;
+  }
+  setTimeout(()=>{setSyncing(false);toast('已刷新 '+REPOS.length+' 个仓库的本地状态（原型演示，未执行真实 Git 命令）。','success');},900);
 };
 /* 搜索：仅当关键词真正变化时才重建仓库网格；下拉本身始终即时更新 */
 $('#searchInput').oninput=e=>{
@@ -145,10 +159,10 @@ document.addEventListener('click',e=>{
   const lg=e.target.closest('[data-login]');
   if(lg){
     const v=lg.dataset.login;
-    if(v==='github'){showPatPanel(true);return;}
+    if(v==='github'){showPatPanel(true,'github');return;}
+    if(v==='gitee'){showPatPanel(true,'gitee');return;}
     if(v==='demo'){enterDemoMode();return;}
     if(v==='local'){enterLocalMode();return;}
-    toast('Gitee 真实登录尚未接入：Gitee 的 OAuth 同样需要后端换取 token。可先用 GitHub 访问令牌或演示数据。','warn');
     return;
   }
   if(e.target.closest('#gatePatSubmit')){submitPat();return;}

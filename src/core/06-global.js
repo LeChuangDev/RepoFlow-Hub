@@ -1,11 +1,18 @@
 /* ================= v4 · 全局检索 ================= */
 function searchMatch(q,repo,rng){
   const term=q.trim().toLowerCase();
+  const cutoff=n=>{const d=new Date();d.setDate(d.getDate()-n);return d.toISOString().slice(0,10);};
   return searchSource().filter(x=>{
     if(repo!=='all'&&x.repo!==repo)return false;
-    if(rng==='week'&&x.date<'2026-11-03')return false;
-    if(rng==='month'&&x.date<'2026-11-01')return false;
-    if(rng==='older'&&x.date>='2026-11-01')return false;
+    if(S.live){
+      if(rng==='week'&&x.date<cutoff(7))return false;
+      if(rng==='month'&&x.date<cutoff(30))return false;
+      if(rng==='older'&&x.date>=cutoff(30))return false;
+    }else{
+      if(rng==='week'&&x.date<'2026-11-03')return false;
+      if(rng==='month'&&x.date<'2026-11-01')return false;
+      if(rng==='older'&&x.date>='2026-11-01')return false;
+    }
     if(!term)return true;
     return (x.msg+' '+x.sha+' '+x.repo+' '+x.author).toLowerCase().includes(term);
   });

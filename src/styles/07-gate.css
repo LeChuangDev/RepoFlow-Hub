@@ -25,6 +25,7 @@
 .gate-dot{width:20px;height:20px;border-radius:6px;flex:none;background:rgba(255,255,255,.22);
   display:grid;place-items:center;font-size:10px;font-weight:700}
 .gate-pat{display:none;text-align:left;margin:2px 0 10px}
+.gate-pat-title{font-size:11px;font-weight:600;color:var(--text-2);margin-bottom:7px}
 .gate-pat .input-apple{width:100%;margin-bottom:8px}
 .gate-pat-hint{font-size:10.5px;color:var(--text-3);line-height:1.55;margin-bottom:10px}
 .gate-pat-hint a{color:var(--primary);text-decoration:underline}
