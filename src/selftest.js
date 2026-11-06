@@ -391,6 +391,11 @@ function runSelfTest(){
   t('Gitee API 仓库映射',geeRepo.id==='ge-9'&&geeRepo.branch==='master'&&geeRepo.kind==='tool'&&geeRepo.sizeMB===0.5,geeRepo.id+' '+geeRepo.sizeMB);
   t('Gitee 登录入口存在',typeof giteeLogin==='function');
   t('同步按钮可刷新实时仓库',typeof refreshLiveRepos==='function');
+  t('本地扫描入口存在',typeof pickLocalFolder==='function'&&typeof scanLocalDirectory==='function');
+  t('解析 .git/HEAD',parseGitHead('ref: refs/heads/main\n')==='main'&&parseGitHead('a1b2c3d4e5f6')==='a1b2c3d（游离）',parseGitHead('ref: refs/heads/feature/x'));
+  t('解析 .git/config 远端',gitRemoteFromConfig('[remote "origin"]\n\turl = git@github.com:demo/demo.git\n')==='git@github.com:demo/demo.git');
+  const logLine='1111111 2222222 樂創 <x@y> 1700000000 +0800\tcommit: docs: 初始化';
+  t('解析 logs/HEAD 最近提交',parseGitLogLine(logLine).msg==='docs: 初始化'&&parseGitLogLine(logLine).date==='2023-11-14',parseGitLogLine(logLine).date);
   const liveState=S.live;S.live=true;
   t('真实模式检索源改用仓库列表',searchSource().length===REPOS.length&&searchSource().length>0&&searchSource()[0].github===true,searchSource().length);
   t('真实模式检索能命中仓库名',searchMatch(REPOS[0].name,'all','all').length>=1);

@@ -30,6 +30,7 @@
     "src/core/11-removal.js",
     "src/core/12-auth-gate.js",
     "src/core/12b-github-auth.js",
+    "src/core/12c-local-scan.js",
     "src/core/13-about.js",
     "src/core/09-interaction.js",
     "src/selftest.js"

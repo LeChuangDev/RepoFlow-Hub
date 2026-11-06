@@ -33,16 +33,18 @@ function renderSearch(){
   const src=searchSource();
   const q=$('#searchQ').value,list=searchMatch(q,S.searchRepo,S.searchRange);
   $('#idxCount').textContent=src.length;
-  $('#searchMeta').textContent=S.live
-    ? '命中 '+list.length+' 条 · 索引 '+src.length+' 条（GitHub 实时仓库）'
+  $('#searchMeta').textContent=S.local
+    ? '命中 '+list.length+' 条 · 索引 '+src.length+' 条（本地扫描仓库）'
+    : S.live
+    ? '命中 '+list.length+' 条 · 索引 '+src.length+' 条（实时仓库）'
     : '命中 '+list.length+' 条 · 索引 '+src.length+' 条（实测 '+LIVE.length+' / 演示 '+COMMITS.length+'）';
   $('#searchResults').innerHTML=list.length?list.map(x=>`<div class="result-row" data-sha="${esc(x.sha)}" data-repo="${esc(x.repo)}">
     ${projectMarkByName(x.repo,'sm')}<span class="hist-sha">${esc(x.sha)}</span>
     <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(x.msg)}</span>
-    <span class="tag ${x.github?'t-blue':x.real?'t-teal':'t-grey'}">${x.github?'实时':x.real?'实测':'演示'}</span>
+    <span class="tag ${x.github?'t-blue':x.local?'t-teal':x.real?'t-teal':'t-grey'}">${x.github?'实时':x.local?'本地':x.real?'实测':'演示'}</span>
     <span class="tag t-blue">${esc(x.repo)}</span>
     <span style="font-size:10.5px;color:var(--text-3);white-space:nowrap">${x.date}</span></div>`).join('')
-    :('<div class="empty">'+(S.live?'没有匹配的仓库。换个关键词，或把仓库筛选切回「全部仓库」。':'没有匹配的提交。清空条件或切换时间范围再试。')+'</div>');
+    :('<div class="empty">'+((S.live||S.local)?'没有匹配的仓库。换个关键词，或把仓库筛选切回「全部仓库」。':'没有匹配的提交。清空条件或切换时间范围再试。')+'</div>');
   $$('#searchResults .result-row').forEach(el=>el.onclick=()=>{
     const r=REPOS.find(x=>x.name===el.dataset.repo||x.id===el.dataset.repo);
     if(r)openRepo(r.id);else toast('该提交属于演示索引，没有对应的本地仓库详情。','warn');

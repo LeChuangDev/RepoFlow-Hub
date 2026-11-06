@@ -11,15 +11,21 @@ $$('[data-theme-set]').forEach(b=>b.onclick=()=>applyTheme(b.dataset.themeSet));
 /* 数据来源切换的界面部分单独抽出，供浏览器前进/后退恢复状态时复用 */
 function renderDemoState(){
   $('#segDemo').classList.toggle('on',S.demo); $('#segReal').classList.toggle('on',!S.demo);
+  const liveHost=(S.accounts[0]&&S.accounts[0].platform==='gitee')?'Gitee':'GitHub';
   const desc=$('#dashDesc');
-  if(desc)desc.innerHTML=S.live
+  if(desc)desc.innerHTML=S.local
+    ? '已只读扫描所选文件夹中的 .git，展示仓库名、分支、远端与最近提交；脏工作区和体积仍需本地 git 才能得到。'
+    : S.live
     ? '实时读取你账号下的仓库列表（只读）。提交历史、CI、通知与推送记录仍为内置示例，不会执行任何 Git 写操作。'
     :'一次看清所有仓库的本地状态、远端状态与体积风险。数据来自本机 <code style="font-size:11.5px">C:\\Users\\zhang\\Desktop\\Project</code> 只读扫描。';
-  const liveHost=(S.accounts[0]&&S.accounts[0].platform==='gitee')?'Gitee':'GitHub';
-  $('#snapshotText').textContent=S.live
+  $('#snapshotText').textContent=S.local
+    ? '本地扫描 · '+REPOS.length+' 个仓库 · 只读'
+    : S.live
     ? liveHost+' 实时快照 · '+REPOS.length+' 个仓库 · 只读'
     : S.demo?'演示态 · 模拟脏工作区 / 未推送 / PR 数据 · 2026-11-06':'实测快照 · 2026-11-06 14:37 · '+REPOS.length+' 个仓库';
-  $('#timelineNote').innerHTML=S.live
+  $('#timelineNote').innerHTML=S.local
+    ? '数据来自你选择的本地文件夹（读取 .git 中的文本文件）：脏工作区、未推送提交与 PR 数量需要真正运行 git 才能判断，因此统一显示 0；推送 / 删除等写操作仍为模拟。'
+    : S.live
     ? '数据来自 '+liveHost+' 开放 API（只读）：脏工作区、未推送提交与 PR 数量需要本机 git 才能得知，因此统一显示 0；推送 / 删除等写操作在原型里仍为模拟。'
     : S.demo
     ? '当前为<b>演示态</b>：脏工作区、未推送提交与 PR 数量为模拟值，用于验证筛选器、卡片状态与批量操作栏的界面表现；不是本机真实 Git 状态。'
@@ -30,13 +36,25 @@ function setDemo(on){
   S.selected.clear(); rerenderRendered(); renderSideAccount(); save(); writeHash(false);
 }
 $('#segDemo').onclick=()=>{
-  if(S.live){toast('已连接远端只读数据，退出登录后才能切换到演示态。','warn');return;}
+  if(S.live||S.local){toast('已连接远端或本地只读数据，退出后才能切换到演示态。','warn');return;}
   setDemo(true);
 };
 $('#segReal').onclick=()=>setDemo(false);
 $('#syncBtn').onclick=()=>{
   if($('.scroll').classList.contains('syncing'))return;
   setSyncing(true);
+  if(S.local){
+    if(LOCAL_DIR_HANDLE){
+      scanLocalDirectory(LOCAL_DIR_HANDLE).then(repos=>{
+        if(!repos.length){setSyncing(false);toast('没有再次找到 .git 目录。','warn');return;}
+        applyLocalScan(LOCAL_DIR_HANDLE.name,repos);setSyncing(false);
+        toast('已重新扫描 '+repos.length+' 个本地仓库（只读）。','success');
+      }).catch(err=>{setSyncing(false);toast('扫描失败：'+err.message,'warn');});
+    }else{
+      setSyncing(false);pickLocalFolder();
+    }
+    return;
+  }
   if(S.live){
     refreshLiveRepos()
       .then(n=>{setSyncing(false);toast('已重新读取 '+n+' 个仓库（只读，未执行本地 git 命令）。','success');})
@@ -155,6 +173,7 @@ document.addEventListener('click',e=>{
   const task=e.target.closest('[data-batch]');
   if(task){openTasks(task.dataset.batch);return;}
   if(e.target.closest('#btnMarks')){openMarkEditor();return;}
+  if(e.target.closest('#btnScanLocal')){pickLocalFolder();return;}
   if(e.target.closest('[data-about]')){openAbout();return;}
   const lg=e.target.closest('[data-login]');
   if(lg){

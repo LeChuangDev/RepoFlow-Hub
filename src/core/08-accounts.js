@@ -5,8 +5,10 @@ function renderSideAccount(){
   if(!a){$('#sideAccountName').textContent='未登录';$('#sideAccountSub').textContent='登录后显示仓库';return;}
   const n=(ACCOUNT_REPOS[a.id]||activeRepos().map(r=>r.id)).length;
   $('#sideAccountAvatar').textContent=a.short||'—';
-  $('#sideAccountName').textContent=a.platform==='local'?'本地离线模式':a.platform==='demo'?'演示数据':(a.state==='pending'?'未登录':a.user);
-  $('#sideAccountSub').textContent=(a.platform==='github'?'GitHub':a.platform==='gitee'?'Gitee':a.platform==='demo'?'中性示例':'本机文件')+' · '+n+(a.platform==='local'?' 个演示仓库':' 个仓库');
+  $('#sideAccountName').textContent=S.local?(S.localName||'本地文件夹'):a.platform==='demo'?'演示数据':(a.state==='pending'?'未登录':(a.platform==='local'?'本地离线模式':a.user));
+  $('#sideAccountSub').textContent=S.local
+    ?'本地文件夹 · '+n+' 个仓库'
+    :(a.platform==='github'?'GitHub':a.platform==='gitee'?'Gitee':a.platform==='demo'?'中性示例':'本机文件')+' · '+n+(a.platform==='local'?' 个演示仓库':' 个仓库');
 }
 function renderAccountCards(){
   const offlineNote=EDITION==='desktop'
@@ -43,7 +45,7 @@ function renderAccountCards(){
   $$('[data-revoke]').forEach(b=>b.onclick=()=>{
     const a=S.accounts.find(x=>x.id===b.dataset.revoke);
     if(!a)return;
-    if(a.id===GH_ACCOUNT_ID||a.id===GITEE_ACCOUNT_ID){logoutAll();return;}
+    if(a.id===GH_ACCOUNT_ID||a.id===GITEE_ACCOUNT_ID||a.id==='local-folder'){logoutAll();return;}
     a.state='revoked';a.store='已清除密钥链条目';renderAccountCards();renderSideAccount();toast('已撤销 '+esc(a.label)+' 的授权。','warn');
   });
   $('#acctSummary').textContent=S.accounts.length+' 个账号 · '+S.accounts.filter(a=>a.state==='active').length+' 个已授权';

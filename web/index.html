@@ -841,6 +841,7 @@ textarea.inp{resize:vertical;min-height:78px;line-height:1.55}
             <div class="page-desc" id="dashDesc">一次看清所有仓库的本地状态、远端状态与体积风险。数据来自本机 <code style="font-size:11.5px">&lt;WORKSPACE&gt;</code> 只读扫描。</div>
           </div>
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-ghost" id="btnScanLocal" style="height:32px;padding:0 12px;font-size:11.5px">扫描本地文件夹</button>
             <button class="btn btn-ghost" id="btnMarks" style="height:32px;padding:0 12px;font-size:11.5px">自定义项目图标</button>
             <div class="snapshot"><span class="dot"></span><span id="snapshotText">实测快照 · 2026-11-06 14:37 · 6 个仓库</span></div>
           </div>
@@ -1794,12 +1795,12 @@ const HOOKS=[
   {n:'firmware-checks',d:'CMake 编译 + 单元测试',g:'测试',log:'1 project · 0 tests'}
 ];
 const COMMITS=[
-  {sha:'d3m0008',msg:'chore: 清理 Keil 构建产物并修正 gitignore',date:'2026-10-23',tag:'HEAD',real:true},
-  {sha:'d3m0006',msg:'fw: 修正 H743 ADC 采样通道映射',date:'2026-10-21',tag:'',real:false},
-  {sha:'d3m0011',msg:'hw: 更新电源板采样电阻封装',date:'2026-10-18',tag:'v1.2.0',real:false},
-  {sha:'d3m0010',msg:'docs: 补充 EIDE 工程导入说明',date:'2026-10-15',tag:'',real:false},
-  {sha:'d3m0001',msg:'chore: 误提交 .pack 器件包缓存',date:'2026-10-12',tag:'',real:false},
-  {sha:'d3m0012',msg:'feat: 初始化 STM32H743 寄存器工程',date:'2026-10-08',tag:'',real:false}
+  {sha:'d3m0010',msg:'chore: 清理 Keil 构建产物并修正 gitignore',date:'2026-10-23',tag:'HEAD',real:true},
+  {sha:'d3m0008',msg:'fw: 修正 H743 ADC 采样通道映射',date:'2026-10-21',tag:'',real:false},
+  {sha:'d3m0014',msg:'hw: 更新电源板采样电阻封装',date:'2026-10-18',tag:'v1.2.0',real:false},
+  {sha:'d3m0013',msg:'docs: 补充 EIDE 工程导入说明',date:'2026-10-15',tag:'',real:false},
+  {sha:'d3m0003',msg:'chore: 误提交 .pack 器件包缓存',date:'2026-10-12',tag:'',real:false},
+  {sha:'d3m0015',msg:'feat: 初始化 STM32H743 寄存器工程',date:'2026-10-08',tag:'',real:false}
 ];
 const CHANGES=[
   {f:'H743_Demo/App/adc.c',s:'M',a:24,d:6},
@@ -1848,12 +1849,12 @@ const W={staged:new Set(),hookDone:0,hookRunning:false,fixed:false,committed:fal
 function hookPass(i){return !(i===5&&!W.fixed)}
 
 const LIVE=[
-  {id:"demoFw",short:"demoFw",sha:"d3m0003",author:"樂創",date:"2026-10-23",msg:"chore: 清理 Keil 构建产物并修正 gitignore"},
-  {id:"demoTool",short:"demoTool",sha:"d3m0005",author:"樂創",date:"2026-11-06",msg:"docs: README 增加在线地址、部署方式与发布流程"},
-  {id:"demoSite",short:"demoSite",sha:"d3m0007",author:"樂創",date:"2026-11-06",msg:"style: 弱化首屏横向光痕，消除明显的横向分割线"},
-  {id:"demoTpls",short:"demoTpls",sha:"d3m0004",author:"樂創",date:"2026-10-30",msg:"更新"},
-  {id:"demoNotes",short:"demoNotes",sha:"d3m0009",author:"樂創",date:"2026-10-20",msg:"docs: fix markdown folder tree render error"},
-  {id:"demoAssets",short:"demoAssets",sha:"d3m0002",author:"樂創",date:"2026-10-20",msg:"改变"}
+  {id:"demoFw",short:"demoFw",sha:"d3m0005",author:"樂創",date:"2026-10-23",msg:"chore: 清理 Keil 构建产物并修正 gitignore"},
+  {id:"demoTool",short:"demoTool",sha:"d3m0007",author:"樂創",date:"2026-11-06",msg:"docs: README 增加在线地址、部署方式与发布流程"},
+  {id:"demoSite",short:"demoSite",sha:"d3m0009",author:"樂創",date:"2026-11-06",msg:"style: 弱化首屏横向光痕，消除明显的横向分割线"},
+  {id:"demoTpls",short:"demoTpls",sha:"d3m0006",author:"樂創",date:"2026-10-30",msg:"更新"},
+  {id:"demoNotes",short:"demoNotes",sha:"d3m0012",author:"樂創",date:"2026-10-20",msg:"docs: fix markdown folder tree render error"},
+  {id:"demoAssets",short:"demoAssets",sha:"d3m0004",author:"樂創",date:"2026-10-20",msg:"改变"}
 ];
 /* ================= v4 · 检索索引 / 通知 / 集群 / 规划分组 ================= */
 const SEARCH_INDEX=[
@@ -2257,7 +2258,7 @@ const S = {view:'dashboard', filter:'all', selected:new Set(), demo:false, theme
   repoLimit:PAGE_SIZE, autoLoadMore:false,
   markEditId:null, markDraft:null,
   removedRepos:new Set(), trash:[], pushRows:[], pushMode:'reflog', removeTab:'commits',
-  authed:false, authMode:'', edition:EDITION, live:false, patPlatform:'github',
+  authed:false, authMode:'', edition:EDITION, live:false, local:false, localName:'', patPlatform:'github',
   lastPicked:null, sdSel:-1, sdItems:[]};
 const LS_KEY='repoflow-hub-v2';
 /* 首屏进入时是否带着显式路由（分享链接）：显式路由优先于本机上次偏好 */
@@ -2576,12 +2577,12 @@ function openRepo(id){
       <dt>分组</dt><dd>${esc(r.group)}</dd>
       <dt>当前分支</dt><dd>${r.branch}</dd>
       <dt>远端</dt><dd>${esc(r.remote)}</dd>
-      <dt>分支总数</dt><dd>${r.live?'—（GitHub API 未提供）':r.branches+' 个（含远端）'}</dd>
-      <dt>受控文件</dt><dd>${r.live?'—（GitHub API 未提供）':r.files+' 个'}</dd>
+      <dt>分支总数</dt><dd>${r.live?(r.local?'—（需要本地 git 读取）':'—（远端 API 未提供）'):r.branches+' 个（含远端）'}</dd>
+      <dt>受控文件</dt><dd>${r.live?(r.local?'—（需要本地 git 读取）':'—（远端 API 未提供）'):r.files+' 个'}</dd>
       <dt>.git 体积</dt><dd style="color:${r.sizeMB>=20?'var(--red)':'inherit'}">${r.size}</dd>
       <dt>LFS 追踪</dt><dd>${r.attrs?'有 .gitattributes，仅换行规则':'未配置'}</dd>
     </dl>
-    <div class="drawer-sec">工作区状态（${S.live?'GitHub 只读数据':S.demo?'演示态':'实测快照'}）</div>
+    <div class="drawer-sec">工作区状态（${S.local?'本地文件夹扫描':S.live?(S.accounts[0]&&S.accounts[0].platform==='gitee'?'Gitee 只读数据':'GitHub 只读数据'):S.demo?'演示态':'实测快照'}）</div>
     <div class="metric-list" style="margin-top:0">
       <div class="metric"><span>未提交变更</span><b>${d}</b></div>
       <div class="metric"><span>未推送提交</span><b>${a}</b></div>
@@ -2871,16 +2872,18 @@ function renderSearch(){
   const src=searchSource();
   const q=$('#searchQ').value,list=searchMatch(q,S.searchRepo,S.searchRange);
   $('#idxCount').textContent=src.length;
-  $('#searchMeta').textContent=S.live
-    ? '命中 '+list.length+' 条 · 索引 '+src.length+' 条（GitHub 实时仓库）'
+  $('#searchMeta').textContent=S.local
+    ? '命中 '+list.length+' 条 · 索引 '+src.length+' 条（本地扫描仓库）'
+    : S.live
+    ? '命中 '+list.length+' 条 · 索引 '+src.length+' 条（实时仓库）'
     : '命中 '+list.length+' 条 · 索引 '+src.length+' 条（实测 '+LIVE.length+' / 演示 '+COMMITS.length+'）';
   $('#searchResults').innerHTML=list.length?list.map(x=>`<div class="result-row" data-sha="${esc(x.sha)}" data-repo="${esc(x.repo)}">
     ${projectMarkByName(x.repo,'sm')}<span class="hist-sha">${esc(x.sha)}</span>
     <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(x.msg)}</span>
-    <span class="tag ${x.github?'t-blue':x.real?'t-teal':'t-grey'}">${x.github?'实时':x.real?'实测':'演示'}</span>
+    <span class="tag ${x.github?'t-blue':x.local?'t-teal':x.real?'t-teal':'t-grey'}">${x.github?'实时':x.local?'本地':x.real?'实测':'演示'}</span>
     <span class="tag t-blue">${esc(x.repo)}</span>
     <span style="font-size:10.5px;color:var(--text-3);white-space:nowrap">${x.date}</span></div>`).join('')
-    :('<div class="empty">'+(S.live?'没有匹配的仓库。换个关键词，或把仓库筛选切回「全部仓库」。':'没有匹配的提交。清空条件或切换时间范围再试。')+'</div>');
+    :('<div class="empty">'+((S.live||S.local)?'没有匹配的仓库。换个关键词，或把仓库筛选切回「全部仓库」。':'没有匹配的提交。清空条件或切换时间范围再试。')+'</div>');
   $$('#searchResults .result-row').forEach(el=>el.onclick=()=>{
     const r=REPOS.find(x=>x.name===el.dataset.repo||x.id===el.dataset.repo);
     if(r)openRepo(r.id);else toast('该提交属于演示索引，没有对应的本地仓库详情。','warn');
@@ -3233,8 +3236,10 @@ function renderSideAccount(){
   if(!a){$('#sideAccountName').textContent='未登录';$('#sideAccountSub').textContent='登录后显示仓库';return;}
   const n=(ACCOUNT_REPOS[a.id]||activeRepos().map(r=>r.id)).length;
   $('#sideAccountAvatar').textContent=a.short||'—';
-  $('#sideAccountName').textContent=a.platform==='local'?'本地离线模式':a.platform==='demo'?'演示数据':(a.state==='pending'?'未登录':a.user);
-  $('#sideAccountSub').textContent=(a.platform==='github'?'GitHub':a.platform==='gitee'?'Gitee':a.platform==='demo'?'中性示例':'本机文件')+' · '+n+(a.platform==='local'?' 个演示仓库':' 个仓库');
+  $('#sideAccountName').textContent=S.local?(S.localName||'本地文件夹'):a.platform==='demo'?'演示数据':(a.state==='pending'?'未登录':(a.platform==='local'?'本地离线模式':a.user));
+  $('#sideAccountSub').textContent=S.local
+    ?'本地文件夹 · '+n+' 个仓库'
+    :(a.platform==='github'?'GitHub':a.platform==='gitee'?'Gitee':a.platform==='demo'?'中性示例':'本机文件')+' · '+n+(a.platform==='local'?' 个演示仓库':' 个仓库');
 }
 function renderAccountCards(){
   const offlineNote=EDITION==='desktop'
@@ -3271,7 +3276,7 @@ function renderAccountCards(){
   $$('[data-revoke]').forEach(b=>b.onclick=()=>{
     const a=S.accounts.find(x=>x.id===b.dataset.revoke);
     if(!a)return;
-    if(a.id===GH_ACCOUNT_ID||a.id===GITEE_ACCOUNT_ID){logoutAll();return;}
+    if(a.id===GH_ACCOUNT_ID||a.id===GITEE_ACCOUNT_ID||a.id==='local-folder'){logoutAll();return;}
     a.state='revoked';a.store='已清除密钥链条目';renderAccountCards();renderSideAccount();toast('已撤销 '+esc(a.label)+' 的授权。','warn');
   });
   $('#acctSummary').textContent=S.accounts.length+' 个账号 · '+S.accounts.filter(a=>a.state==='active').length+' 个已授权';
@@ -3725,20 +3730,32 @@ function ghRepoToLocal(r){
 /* 检索数据源：演示模式用内置索引；真实登录后直接用当前仓库列表，
    避免搜索仍停留在示例数据上。 */
 function searchSource(){
-  if(!S.live)return SEARCH_INDEX;
-  const user=(S.accounts[0]&&S.accounts[0].user)||'GitHub';
-  return REPOS.map(r=>({repo:r.name,sha:'—',msg:r.msg,branch:r.branch,author:user,date:r.date,real:true,github:true}));
+  if(!S.live&&!S.local)return SEARCH_INDEX;
+  const user=(S.accounts[0]&&S.accounts[0].user)||'本地';
+  return REPOS.map(r=>({repo:r.name,sha:'—',msg:r.msg,branch:r.branch,author:user,date:r.date,real:true,github:S.live,local:S.local}));
 }
 
 function renderLiveNote(){
-  const el=$('#liveNote');if(el)el.style.display=S.live?'flex':'none';
+  const el=$('#liveNote');if(!el)return;
+  const on=S.live||S.local;
+  el.style.display=on?'flex':'none';
+  if(on){
+    const b=el.querySelector('b'),s=el.querySelector('span');
+    if(S.local){
+      if(b)b.textContent='已扫描本地文件夹（只读）';
+      if(s)s.textContent='仓库列表来自你选择的文件夹（读取 .git 文本）；脏工作区、未推送提交需要真正运行 git，因此显示 0，写操作仍为模拟。';
+    }else{
+      if(b)b.textContent='已连接远端（只读）';
+      if(s)s.textContent='仓库列表为实时数据；提交历史、CI、通知、推送记录与平台同步仍为内置示例，不会改动任何仓库。';
+    }
+  }
 }
 
 function applyLiveSession(platform,user,repos){
   const gh=platform==='github';
   const id=gh?GH_ACCOUNT_ID:GITEE_ACCOUNT_ID;
   const login=user.login||user.name||'unknown';
-  S.demo=false;S.live=true;
+  S.demo=false;S.live=true;S.local=false;S.localName='';
   const acct={id:id,platform:platform,host:gh?'github.com':'gitee.com',user:login,
     label:(gh?'GitHub · ':'Gitee · ')+login,state:'active',
     scopes:[gh?'repo（按令牌授权范围）':'projects（按令牌授权范围）'],
@@ -3817,8 +3834,8 @@ async function githubLogin(rawToken){
 }
 
 function githubLogout(){
-  GH_TOKEN='';GITEE_TOKEN='';
-  S.live=false;
+  GH_TOKEN='';GITEE_TOKEN='';LOCAL_DIR_HANDLE=null;
+  S.live=false;S.local=false;S.localName='';
   delete ACCOUNT_REPOS[GH_ACCOUNT_ID];
   delete ACCOUNT_REPOS[GITEE_ACCOUNT_ID];
   REPOS.length=0;DEMO_REPOS.forEach(r=>REPOS.push(Object.assign({},r)));
@@ -3842,7 +3859,7 @@ async function refreshLiveRepos(){
 }
 
 function enterDemoMode(){
-  S.demo=true;S.live=false;
+  S.demo=true;S.live=false;S.local=false;S.localName='';
   const acct={id:'demo-mode',platform:'demo',host:'示例数据',user:'演示模式',label:'演示数据（中性示例）',
     state:'active',scopes:['只读示例'],color:'#2E9E96',short:'DM',exp:'不适用',store:'不保存凭据'};
   S.accounts=[acct];
@@ -3895,6 +3912,190 @@ async function submitPat(){
   }finally{
     btn.disabled=false;
   }
+}
+/* ================= 本地文件夹只读扫描 =================
+   浏览器无法执行 git 命令，这里用 File System Access API 读取所选目录里
+   .git 的文本文件（HEAD / config / refs / logs / COMMIT_EDITMSG），
+   还原仓库名、当前分支、远端地址与最近一次提交。
+   不支持目录选择器的环境（Firefox / Safari / 部分 file:// 场景）退回到
+   webkitdirectory 文件选择，从相对路径里识别 .git。
+   限制：脏工作区、未推送提交、准确体积需要真正运行 git，页面里不伪造。
+   安全：只读，不请求写权限，不上传任何内容。                        */
+let LOCAL_DIR_HANDLE=null;
+
+function parseGitHead(text){
+  const t=String(text||'').trim();
+  if(!t)return '—';
+  if(t.startsWith('ref: '))return t.slice(5).replace(/^refs\/heads\//,'');
+  return t.slice(0,7)+'（游离）';
+}
+
+function gitRemoteFromConfig(text){
+  const m=String(text||'').match(/^\s*url\s*=\s*(.+)$/m);
+  return m?m[1].trim():'';
+}
+
+function parseGitLogLine(line){
+  const m=String(line||'').match(/\s(\d{9,})\s+[+-]\d{4}\s+([^]*)$/);
+  if(!m)return null;
+  const msg=m[2].replace(/^\s*commit:\s*/,'').trim();
+  const date=new Date(Number(m[1])*1000).toISOString().slice(0,10);
+  return {date:date,msg:msg};
+}
+
+function buildLocalRepo(name,headText,cfgText,logText,commitEditText,branchCount){
+  let commit=null;
+  if(logText){
+    const lines=String(logText).trim().split('\n');
+    commit=parseGitLogLine(lines[lines.length-1]);
+  }
+  if(!commit||!commit.msg){
+    const first=String(commitEditText||'').trim().split('\n')[0];
+    if(first)commit=Object.assign({},commit||{date:''},{msg:first});
+  }
+  return {
+    id:'lf-'+name,name:name,group:'本地工程',remote:gitRemoteFromConfig(cfgText)||'（未配置远端）',
+    branch:parseGitHead(headText),date:(commit&&commit.date)||new Date().toISOString().slice(0,10),
+    msg:(commit&&commit.msg)||'（没有读取到提交说明）',size:'—',sizeMB:0.05,
+    files:0,branches:Math.max(1,branchCount||0),attrs:false,kind:'tool',live:true,local:true,
+    demo:{dirty:0,ahead:0,pr:0}
+  };
+}
+
+async function readTextFile(dir,parts){
+  try{
+    let h=dir;
+    for(const p of parts.slice(0,-1))h=await h.getDirectoryHandle(p);
+    const f=await h.getFileHandle(parts[parts.length-1]);
+    return await (await f.getFile()).text();
+  }catch(err){return '';}
+}
+
+async function hasGitDir(dir){
+  try{await dir.getDirectoryHandle('.git');return true;}catch(err){return false;}
+}
+
+async function countRefFiles(dir,depth){
+  let n=0;
+  for await(const [,h] of dir.entries()){
+    if(h.kind==='file')n++;
+    else if(depth>0)n+=await countRefFiles(h,depth-1);
+  }
+  return n;
+}
+
+async function readGitRepo(dir,name){
+  const git=await dir.getDirectoryHandle('.git');
+  const head=await readTextFile(git,['HEAD']);
+  const cfg=await readTextFile(git,['config']);
+  const log=await readTextFile(git,['logs','HEAD']);
+  const commitEdit=await readTextFile(git,['COMMIT_EDITMSG']);
+  let branches=0;
+  try{branches=await countRefFiles(await (await git.getDirectoryHandle('refs')).getDirectoryHandle('heads'),1);}catch(err){branches=0;}
+  return buildLocalRepo(name,head,cfg,log,commitEdit,branches);
+}
+
+async function scanLocalDirectory(root){
+  const found=[];
+  if(await hasGitDir(root))found.push(await readGitRepo(root,root.name));
+  if(!found.length){
+    for await(const [name,h] of root.entries()){
+      if(h.kind!=='directory')continue;
+      if(name==='node_modules'||name.startsWith('.')||name==='dist')continue;
+      if(await hasGitDir(h))found.push(await readGitRepo(h,name));
+      if(found.length>=60)break;
+    }
+  }
+  if(!found.length){
+    for await(const [name,h] of root.entries()){
+      if(h.kind!=='directory'||name==='node_modules'||name.startsWith('.')||name==='dist')continue;
+      for await(const [sub,sh] of h.entries()){
+        if(sh.kind!=='directory'||sub.startsWith('.'))continue;
+        if(await hasGitDir(sh))found.push(await readGitRepo(sh,name+'/'+sub));
+        if(found.length>=60)break;
+      }
+      if(found.length>=60)break;
+    }
+  }
+  return found;
+}
+
+/* webkitdirectory 兜底：从相对路径识别 .git，读取关键文本 */
+async function collectReposFromFiles(files){
+  const groups=new Map();
+  for(const file of files){
+    const parts=String(file.webkitRelativePath||file.name||'').split('/');
+    const gi=parts.indexOf('.git');
+    if(gi<1)continue;
+    const root=parts.slice(0,gi).join('/');
+    if(!groups.has(root))groups.set(root,{name:parts.slice(0,gi).pop(),files:{},heads:new Set()});
+    const g=groups.get(root);
+    const rel=parts.slice(gi+1).join('/');
+    if(rel==='HEAD'||rel==='config'||rel==='COMMIT_EDITMSG'||rel==='logs/HEAD')g.files[rel]=file;
+    if(rel.startsWith('refs/heads/'))g.heads.add(rel);
+  }
+  const repos=[];
+  for(const g of groups.values()){
+    const text=async f=>f?await f.text():'';
+    repos.push(buildLocalRepo(g.name,await text(g.files['HEAD']),await text(g.files['config']),
+      await text(g.files['logs/HEAD']),await text(g.files['COMMIT_EDITMSG']),g.heads.size));
+  }
+  return repos;
+}
+
+function applyLocalScan(rootName,repos){
+  S.demo=false;S.live=false;S.local=true;S.localName=rootName;
+  const acct={id:'local-folder',platform:'local',host:'本地文件夹',user:rootName,
+    label:'本地文件夹 · '+rootName,state:'active',scopes:['只读扫描 .git'],
+    color:'#2E9E96',short:'LF',exp:'不适用',store:'只读，不保存授权'};
+  S.accounts=[acct];
+  S.activeAccount='local-folder';S.authed=true;S.authMode='local';
+  ACCOUNT_REPOS['local-folder']=repos.map(r=>r.id);
+  REPOS.length=0;repos.forEach(r=>REPOS.push(r));
+  S.removedRepos.clear();S.selected.clear();S.repoLimit=PAGE_SIZE;
+  hideGate();renderAccountCards();renderSideAccount();renderAll();renderDemoState();renderLiveNote();rerenderRendered();
+}
+
+async function pickLocalFolderViaInput(){
+  const input=document.createElement('input');
+  input.type='file';input.webkitdirectory=true;input.multiple=true;input.style.display='none';
+  document.body.appendChild(input);
+  input.onchange=async()=>{
+    const files=Array.from(input.files||[]);
+    input.remove();
+    if(!files.length)return;
+    toast('正在只读扫描所选目录…','success');
+    const repos=await collectReposFromFiles(files);
+    if(!repos.length){toast('没有识别到 .git，请选择包含仓库的目录。','warn');return;}
+    LOCAL_DIR_HANDLE=null;
+    applyLocalScan(repos[0].name||'本地文件夹',repos);
+    toast('已扫描 '+repos.length+' 个本地仓库（只读，不会修改任何文件）。','success');
+  };
+  input.click();
+}
+
+async function pickLocalFolder(){
+  if(!('showDirectoryPicker' in window)){
+    await pickLocalFolderViaInput();
+    return;
+  }
+  let root=null;
+  try{
+    root=await window.showDirectoryPicker({mode:'read',id:'repoflow-local-scan'});
+  }catch(err){
+    if(err&&err.name==='AbortError')return;
+    await pickLocalFolderViaInput();
+    return;
+  }
+  toast('正在只读扫描「'+esc(root.name)+'」…','success');
+  const repos=await scanLocalDirectory(root);
+  if(!repos.length){
+    toast('没有在该文件夹或其一级子目录里找到 .git，换个目录再试。','warn');
+    return;
+  }
+  LOCAL_DIR_HANDLE=root;
+  applyLocalScan(root.name,repos);
+  toast('已扫描 '+repos.length+' 个本地仓库（只读，不会修改任何文件）。','success');
 }
 /* ================= v10 · 作者署名、关于面板与隐私隔离自检 =================
    「樂創」是作者主动公开的中文笔名，不是账户信息；所有版本都展示。
@@ -3989,15 +4190,21 @@ $$('[data-theme-set]').forEach(b=>b.onclick=()=>applyTheme(b.dataset.themeSet));
 /* 数据来源切换的界面部分单独抽出，供浏览器前进/后退恢复状态时复用 */
 function renderDemoState(){
   $('#segDemo').classList.toggle('on',S.demo); $('#segReal').classList.toggle('on',!S.demo);
+  const liveHost=(S.accounts[0]&&S.accounts[0].platform==='gitee')?'Gitee':'GitHub';
   const desc=$('#dashDesc');
-  if(desc)desc.innerHTML=S.live
+  if(desc)desc.innerHTML=S.local
+    ? '已只读扫描所选文件夹中的 .git，展示仓库名、分支、远端与最近提交；脏工作区和体积仍需本地 git 才能得到。'
+    : S.live
     ? '实时读取你账号下的仓库列表（只读）。提交历史、CI、通知与推送记录仍为内置示例，不会执行任何 Git 写操作。'
     :'一次看清所有仓库的本地状态、远端状态与体积风险。数据来自本机 <code style="font-size:11.5px">C:\\Users\\example\\Desktop\\Project</code> 只读扫描。';
-  const liveHost=(S.accounts[0]&&S.accounts[0].platform==='gitee')?'Gitee':'GitHub';
-  $('#snapshotText').textContent=S.live
+  $('#snapshotText').textContent=S.local
+    ? '本地扫描 · '+REPOS.length+' 个仓库 · 只读'
+    : S.live
     ? liveHost+' 实时快照 · '+REPOS.length+' 个仓库 · 只读'
     : S.demo?'演示态 · 模拟脏工作区 / 未推送 / PR 数据 · 2026-11-06':'实测快照 · 2026-11-06 14:37 · '+REPOS.length+' 个仓库';
-  $('#timelineNote').innerHTML=S.live
+  $('#timelineNote').innerHTML=S.local
+    ? '数据来自你选择的本地文件夹（读取 .git 中的文本文件）：脏工作区、未推送提交与 PR 数量需要真正运行 git 才能判断，因此统一显示 0；推送 / 删除等写操作仍为模拟。'
+    : S.live
     ? '数据来自 '+liveHost+' 开放 API（只读）：脏工作区、未推送提交与 PR 数量需要本机 git 才能得知，因此统一显示 0；推送 / 删除等写操作在原型里仍为模拟。'
     : S.demo
     ? '当前为<b>演示态</b>：脏工作区、未推送提交与 PR 数量为模拟值，用于验证筛选器、卡片状态与批量操作栏的界面表现；不是本机真实 Git 状态。'
@@ -4008,13 +4215,25 @@ function setDemo(on){
   S.selected.clear(); rerenderRendered(); renderSideAccount(); save(); writeHash(false);
 }
 $('#segDemo').onclick=()=>{
-  if(S.live){toast('已连接远端只读数据，退出登录后才能切换到演示态。','warn');return;}
+  if(S.live||S.local){toast('已连接远端或本地只读数据，退出后才能切换到演示态。','warn');return;}
   setDemo(true);
 };
 $('#segReal').onclick=()=>setDemo(false);
 $('#syncBtn').onclick=()=>{
   if($('.scroll').classList.contains('syncing'))return;
   setSyncing(true);
+  if(S.local){
+    if(LOCAL_DIR_HANDLE){
+      scanLocalDirectory(LOCAL_DIR_HANDLE).then(repos=>{
+        if(!repos.length){setSyncing(false);toast('没有再次找到 .git 目录。','warn');return;}
+        applyLocalScan(LOCAL_DIR_HANDLE.name,repos);setSyncing(false);
+        toast('已重新扫描 '+repos.length+' 个本地仓库（只读）。','success');
+      }).catch(err=>{setSyncing(false);toast('扫描失败：'+err.message,'warn');});
+    }else{
+      setSyncing(false);pickLocalFolder();
+    }
+    return;
+  }
   if(S.live){
     refreshLiveRepos()
       .then(n=>{setSyncing(false);toast('已重新读取 '+n+' 个仓库（只读，未执行本地 git 命令）。','success');})
@@ -4133,6 +4352,7 @@ document.addEventListener('click',e=>{
   const task=e.target.closest('[data-batch]');
   if(task){openTasks(task.dataset.batch);return;}
   if(e.target.closest('#btnMarks')){openMarkEditor();return;}
+  if(e.target.closest('#btnScanLocal')){pickLocalFolder();return;}
   if(e.target.closest('[data-about]')){openAbout();return;}
   const lg=e.target.closest('[data-login]');
   if(lg){
@@ -4578,6 +4798,11 @@ function runSelfTest(){
   t('Gitee API 仓库映射',geeRepo.id==='ge-9'&&geeRepo.branch==='master'&&geeRepo.kind==='tool'&&geeRepo.sizeMB===0.5,geeRepo.id+' '+geeRepo.sizeMB);
   t('Gitee 登录入口存在',typeof giteeLogin==='function');
   t('同步按钮可刷新实时仓库',typeof refreshLiveRepos==='function');
+  t('本地扫描入口存在',typeof pickLocalFolder==='function'&&typeof scanLocalDirectory==='function');
+  t('解析 .git/HEAD',parseGitHead('ref: refs/heads/main\n')==='main'&&parseGitHead('d3m00114e5f6')==='d3m0011（游离）',parseGitHead('ref: refs/heads/feature/x'));
+  t('解析 .git/config 远端',gitRemoteFromConfig('[remote "origin"]\n\turl = git@github.com:demo/demo.git\n')==='git@github.com:demo/demo.git');
+  const logLine='d3m0001 d3m0002 樂創 <x@y> 1700000000 +0800\tcommit: docs: 初始化';
+  t('解析 logs/HEAD 最近提交',parseGitLogLine(logLine).msg==='docs: 初始化'&&parseGitLogLine(logLine).date==='2023-11-14',parseGitLogLine(logLine).date);
   const liveState=S.live;S.live=true;
   t('真实模式检索源改用仓库列表',searchSource().length===REPOS.length&&searchSource().length>0&&searchSource()[0].github===true,searchSource().length);
   t('真实模式检索能命中仓库名',searchMatch(REPOS[0].name,'all','all').length>=1);

@@ -63,20 +63,32 @@ function ghRepoToLocal(r){
 /* 检索数据源：演示模式用内置索引；真实登录后直接用当前仓库列表，
    避免搜索仍停留在示例数据上。 */
 function searchSource(){
-  if(!S.live)return SEARCH_INDEX;
-  const user=(S.accounts[0]&&S.accounts[0].user)||'GitHub';
-  return REPOS.map(r=>({repo:r.name,sha:'—',msg:r.msg,branch:r.branch,author:user,date:r.date,real:true,github:true}));
+  if(!S.live&&!S.local)return SEARCH_INDEX;
+  const user=(S.accounts[0]&&S.accounts[0].user)||'本地';
+  return REPOS.map(r=>({repo:r.name,sha:'—',msg:r.msg,branch:r.branch,author:user,date:r.date,real:true,github:S.live,local:S.local}));
 }
 
 function renderLiveNote(){
-  const el=$('#liveNote');if(el)el.style.display=S.live?'flex':'none';
+  const el=$('#liveNote');if(!el)return;
+  const on=S.live||S.local;
+  el.style.display=on?'flex':'none';
+  if(on){
+    const b=el.querySelector('b'),s=el.querySelector('span');
+    if(S.local){
+      if(b)b.textContent='已扫描本地文件夹（只读）';
+      if(s)s.textContent='仓库列表来自你选择的文件夹（读取 .git 文本）；脏工作区、未推送提交需要真正运行 git，因此显示 0，写操作仍为模拟。';
+    }else{
+      if(b)b.textContent='已连接远端（只读）';
+      if(s)s.textContent='仓库列表为实时数据；提交历史、CI、通知、推送记录与平台同步仍为内置示例，不会改动任何仓库。';
+    }
+  }
 }
 
 function applyLiveSession(platform,user,repos){
   const gh=platform==='github';
   const id=gh?GH_ACCOUNT_ID:GITEE_ACCOUNT_ID;
   const login=user.login||user.name||'unknown';
-  S.demo=false;S.live=true;
+  S.demo=false;S.live=true;S.local=false;S.localName='';
   const acct={id:id,platform:platform,host:gh?'github.com':'gitee.com',user:login,
     label:(gh?'GitHub · ':'Gitee · ')+login,state:'active',
     scopes:[gh?'repo（按令牌授权范围）':'projects（按令牌授权范围）'],
@@ -155,8 +167,8 @@ async function githubLogin(rawToken){
 }
 
 function githubLogout(){
-  GH_TOKEN='';GITEE_TOKEN='';
-  S.live=false;
+  GH_TOKEN='';GITEE_TOKEN='';LOCAL_DIR_HANDLE=null;
+  S.live=false;S.local=false;S.localName='';
   delete ACCOUNT_REPOS[GH_ACCOUNT_ID];
   delete ACCOUNT_REPOS[GITEE_ACCOUNT_ID];
   REPOS.length=0;DEMO_REPOS.forEach(r=>REPOS.push(Object.assign({},r)));
@@ -180,7 +192,7 @@ async function refreshLiveRepos(){
 }
 
 function enterDemoMode(){
-  S.demo=true;S.live=false;
+  S.demo=true;S.live=false;S.local=false;S.localName='';
   const acct={id:'demo-mode',platform:'demo',host:'示例数据',user:'演示模式',label:'演示数据（中性示例）',
     state:'active',scopes:['只读示例'],color:'#2E9E96',short:'DM',exp:'不适用',store:'不保存凭据'};
   S.accounts=[acct];
