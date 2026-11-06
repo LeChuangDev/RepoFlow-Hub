@@ -51,7 +51,7 @@ templates/              固件 CI / pre-commit / 钩子三份内嵌配置 + 脱�
 scripts/build.py        单文件构建器（dev / web / desktop 三个目标）
 scripts/verify.py       静态校验 + 可选浏览器自检
 scripts/package.py      生成 Windows / Linux 离线安装包
-web/                    网站构建产物（含 edgeone.json）
+web/                    网站构建产物
 desktop/                离线版启动脚本与产物
 prototype/              本机开发副本（含实测数据，不入公开分发）
 ```
@@ -91,7 +91,7 @@ npx edgeone login
 npx edgeone makers deploy ./web -n repoflow-hub -e production -a overseas
 ```
 
-`web/edgeone.json` 定义了安全响应头（CSP、HSTS、nosniff、X-Frame-Options 等）与 HTML 不缓存策略。未备案域名请使用海外区域；绑定自定义域名需在 EdgeOne 控制台「域名管理」完成归属验证、CNAME 与 HTTPS 证书。GitHub Actions 的 CLI 部署为手动兜底，日常发布由 EdgeOne 的 Git 导入自动完成。
+仓库根目录的 `edgeone.json` 定义了安全响应头（CSP、HSTS、nosniff、X-Frame-Options 等）与 HTML 不缓存策略（EdgeOne 只读取项目根目录的该文件，放在输出目录不会生效）。未备案域名请使用海外区域；绑定自定义域名需在 EdgeOne 控制台「域名管理」完成归属验证、CNAME 与 HTTPS 证书。GitHub Actions 的 CLI 部署为手动兜底，日常发布由 EdgeOne 的 Git 导入自动完成。
 
 ## 隐私
 
