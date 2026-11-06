@@ -13,12 +13,12 @@ const EDGEONE_STEPS=[
   '自定义域名可关联生产或预览环境，域名始终指向该环境最近一次成功部署。'
 ];
 const PRIVACY_FACTS=[
-  '单文件静态页面：无后端、无数据库、无服务端会话，页面不会调用任何读取账号的接口。',
-  '登录为本机确定性模拟：账号只存在于当前页面内存，不写入 localStorage（浏览器本地存储）、cookie（小型站点数据）或网址参数；刷新页面即回到未登录。',
+  '单文件静态页面：无后端、无数据库、无服务端会话；只有在你主动连接 GitHub 时才会调用 api.github.com，其余时间不发起任何网络请求。',
+  'GitHub 登录使用你自己创建的访问令牌：令牌只存在当前页面内存，不写入 localStorage（浏览器本地存储）、cookie（小型站点数据）或网址参数；刷新页面即失效，退出登录立即清空。',
   '主题、筛选、折叠状态与项目图标偏好只写入当前浏览器的 localStorage；不同设备、不同浏览器、隐私窗口之间互不可见。',
-  '公开产物使用中性示例仓库与示例文件名，查看网页源码也看不到作者的账号、真实仓库清单、本机路径或提交短哈希。',
-  '公开产物零外部资源请求：不加载远程字体、脚本、图片或统计代码，字体使用设备自带系统字体。',
-  '离线 Windows 版与网站版各自使用独立的浏览器存储，两边的仓库列表、图标与登录状态不会同步。'
+  '公开产物使用中性示例仓库与示例文件名，查看网页源码也看不到作者的账号、真实仓库清单、本机路径或提交短哈希（你自己登录后拉取的真实仓库只显示在本次会话）。',
+  '公开产物不加载远程字体、脚本、图片或统计代码，字体使用设备自带系统字体；请求只发往 api.github.com。',
+  '离线 Windows 版与网站版各自使用独立的浏览器存储，两边的仓库列表、图标与登录状态不会同步；离线版不联网。'
 ];
 
 function editionName(){return EDITION_NAME[EDITION]||'未知形态';}
@@ -47,8 +47,8 @@ function privacyAudit(){
     {n:'cookie 为空',ok:document.cookie==='',note:document.cookie?'存在 cookie':'未写入任何 cookie'},
     {n:'网址不含身份或令牌参数',ok:!/[?&](token|user|account|login)=/i.test(location.search),note:location.search||'无查询参数'},
     {n:'无外部脚本 / 样式 / 图片',ok:external===0,note:devFontOnly?'开发副本保留远程字体（公开产物已移除）':external+' 个外部标签'},
-    {n:'公开版为中性示例数据',ok:EDITION==='dev'||REPOS.every(r=>r.remote.indexOf('demoOrg/')===0),
-     note:EDITION==='dev'?'开发副本含本机实测数据，不对外发布':'公开产物已中性化（构建期扫描校验）'},
+    {n:'公开版为中性示例数据',ok:EDITION==='dev'||S.live||REPOS.every(r=>r.remote.indexOf('demoOrg/')===0),
+     note:EDITION==='dev'?'开发副本含本机实测数据，不对外发布':S.live?'当前为你登录后拉取的实时数据，仅存在于本页内存（离开即清空）':'公开产物已中性化（构建期扫描校验）'},
     {n:'账号仅存页面内存',ok:!keys.some(k=>/accounts|authed/i.test(k)),note:'刷新后需重新登录'}
   ];
 }

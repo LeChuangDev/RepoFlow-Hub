@@ -4,15 +4,16 @@ function renderSideAccount(){
   const a=currentAccount();
   if(!a){$('#sideAccountName').textContent='未登录';$('#sideAccountSub').textContent='登录后显示仓库';return;}
   const n=(ACCOUNT_REPOS[a.id]||activeRepos().map(r=>r.id)).length;
-  $('#sideAccountName').textContent=a.platform==='local'?'本地离线模式':(a.state==='pending'?'未登录':a.user);
-  $('#sideAccountSub').textContent=(a.platform==='github'?'GitHub':a.platform==='gitee'?'Gitee':'本机文件')+' · '+n+' 个仓库';
+  $('#sideAccountAvatar').textContent=a.short||'—';
+  $('#sideAccountName').textContent=a.platform==='local'?'本地离线模式':a.platform==='demo'?'演示数据':(a.state==='pending'?'未登录':a.user);
+  $('#sideAccountSub').textContent=(a.platform==='github'?'GitHub':a.platform==='gitee'?'Gitee':a.platform==='demo'?'中性示例':'本机文件')+' · '+n+(a.platform==='local'?' 个演示仓库':' 个仓库');
 }
 function renderAccountCards(){
   const offlineNote=EDITION==='desktop'
     ?'<div class="notice" style="margin-bottom:var(--s4)"><b>离线 Windows 版：</b>本版本不连接网站、不需要任何账号，所有仓库信息来自本机文件。账号与授权页仅用于说明，登录入口已停用。</div>':'';
   if(!S.accounts.length){
     $('#accountCards').innerHTML=offlineNote+'<div class="empty">当前没有关联任何账号。登录后才会读取仓库列表。'
-      +(EDITION==='desktop'?'':'<div class="action-row" style="justify-content:center;margin-top:var(--s4)"><button class="btn btn-primary" data-login="github">登录 GitHub</button><button class="btn btn-ghost" data-login="gitee">登录 Gitee</button><button class="btn btn-ghost" data-login="local">本地离线模式</button></div>')
+      +(EDITION==='desktop'?'':'<div class="action-row" style="justify-content:center;margin-top:var(--s4)"><button class="btn btn-primary" data-login="github">连接 GitHub</button><button class="btn btn-ghost" data-login="demo">演示数据</button><button class="btn btn-ghost" data-login="gitee">Gitee（未接入）</button></div>')
       +'</div>';
     $('#acctSummary').textContent='0 个账号 · 0 个已授权';
     renderSideAccount();
@@ -41,7 +42,9 @@ function renderAccountCards(){
   });
   $$('[data-revoke]').forEach(b=>b.onclick=()=>{
     const a=S.accounts.find(x=>x.id===b.dataset.revoke);
-    if(a){a.state='revoked';a.store='已清除密钥链条目';renderAccountCards();renderSideAccount();toast('已撤销 '+esc(a.label)+' 的授权。','warn');}
+    if(!a)return;
+    if(a.id===GH_ACCOUNT_ID){logoutAll();return;}
+    a.state='revoked';a.store='已清除密钥链条目';renderAccountCards();renderSideAccount();toast('已撤销 '+esc(a.label)+' 的授权。','warn');
   });
   $('#acctSummary').textContent=S.accounts.length+' 个账号 · '+S.accounts.filter(a=>a.state==='active').length+' 个已授权';
   renderSideAccount();
@@ -79,14 +82,14 @@ function renderWizard(){
   $('#btnNextStep').disabled=S.wizardStep>=AUTH_STEPS.length||S.wizardStep<0;
 }
 function finishAuth(){
-  const p=$('#wizPlatform').value,label=p==='github'?'新 GitHub 账号':'新 Gitee 账号';
-  const id='custom-'+Date.now().toString(36);
-  S.accounts.push({id,platform:p,host:p==='github'?'github.com':'gitee.com',user:'已登录账号',label,state:'active',
-    scopes:[...S.scopes],color:p==='github'?'#6C63FF':'#C71D23',short:p==='github'?'GH':'GE',
-    exp:'刷新令牌 6 个月',store:'keychain://repoflow/'+id});
-  ACCOUNT_REPOS[id]=['calcbridge'];
-  S.wizardStep=-1;renderWizard();renderAccountCards();
-  toast('已关联 '+esc(label)+'（模拟，未发起真实网络请求）。','success');
+  const p=$('#wizPlatform').value;
+  S.wizardStep=-1;renderWizard();
+  if(p==='github'){
+    showPatPanel(true);
+    toast('向导只说明 OAuth 流程；本页用访问令牌完成真实连接，请粘贴令牌。','warn');
+    return;
+  }
+  toast('Gitee 真实登录尚未接入（需要后端换 token），可先用 GitHub 访问令牌或演示数据。','warn');
 }
 
 /* ================= v6 · 开源就绪 ================= */

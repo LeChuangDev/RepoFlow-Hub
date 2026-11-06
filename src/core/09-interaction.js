@@ -11,8 +11,12 @@ $$('[data-theme-set]').forEach(b=>b.onclick=()=>applyTheme(b.dataset.themeSet));
 /* 数据来源切换的界面部分单独抽出，供浏览器前进/后退恢复状态时复用 */
 function renderDemoState(){
   $('#segDemo').classList.toggle('on',S.demo); $('#segReal').classList.toggle('on',!S.demo);
-  $('#snapshotText').textContent=S.demo?'演示态 · 模拟脏工作区 / 未推送 / PR 数据 · 2026-11-06':'实测快照 · 2026-11-06 14:37 · 6 个仓库';
-  $('#timelineNote').innerHTML=S.demo
+  $('#snapshotText').textContent=S.live
+    ? 'GitHub 实时快照 · '+REPOS.length+' 个仓库 · 只读'
+    : S.demo?'演示态 · 模拟脏工作区 / 未推送 / PR 数据 · 2026-11-06':'实测快照 · 2026-11-06 14:37 · '+REPOS.length+' 个仓库';
+  $('#timelineNote').innerHTML=S.live
+    ? '数据来自 GitHub REST API（只读）：脏工作区、未推送提交与 PR 数量需要本机 git 才能得知，因此统一显示 0；推送 / 删除等写操作在原型里仍为模拟。'
+    : S.demo
     ? '当前为<b>演示态</b>：脏工作区、未推送提交与 PR 数量为模拟值，用于验证筛选器、卡片状态与批量操作栏的界面表现；不是本机真实 Git 状态。'
     : '本机 6 个仓库全部处于 <b>clean</b> 状态且仅有 main 分支，因此「未提交变更 / 未推送 / 分支差异」三类卡片数据均为 0。切换「演示态」可查看这些状态出现时的界面表现。';
 }
@@ -64,7 +68,7 @@ $('#btnDownloadCfg').onclick=downloadCfg;
 $('#btnCopySync').onclick=()=>copyText($('#syncCmd').textContent,' 同步命令');
 $('#btnRunSync').onclick=()=>{S.syncRan=true;renderSyncResults();toast('逐远端同步完成：结果按平台分别记录。','success');};
 $('#btnCopyPerf').onclick=()=>copyText(perfCommand(),' 性能配置命令');
-$('#btnStartAuth').onclick=()=>{S.wizardStep=0;renderWizard();toast('登录向导已启动（模拟，不发起真实网络请求）。','success');};
+$('#btnStartAuth').onclick=()=>{S.wizardStep=0;renderWizard();toast('登录向导用于展示 OAuth 流程；本页的真实连接使用访问令牌。','success');};
 $('#btnNextStep').onclick=()=>{S.wizardStep++;renderWizard();if(S.wizardStep>=AUTH_STEPS.length)finishAuth();};
 $('#wizPlatform').onchange=renderByoaUrl;
 $('#byoaClientId').oninput=renderByoaUrl;
@@ -139,7 +143,16 @@ document.addEventListener('click',e=>{
   if(e.target.closest('#btnMarks')){openMarkEditor();return;}
   if(e.target.closest('[data-about]')){openAbout();return;}
   const lg=e.target.closest('[data-login]');
-  if(lg){const v=lg.dataset.login;if(v==='local')enterLocalMode();else loginAs(v==='gitee'?'gitee-personal':'github-primary');return;}
+  if(lg){
+    const v=lg.dataset.login;
+    if(v==='github'){showPatPanel(true);return;}
+    if(v==='demo'){enterDemoMode();return;}
+    if(v==='local'){enterLocalMode();return;}
+    toast('Gitee 真实登录尚未接入：Gitee 的 OAuth 同样需要后端换取 token。可先用 GitHub 访问令牌或演示数据。','warn');
+    return;
+  }
+  if(e.target.closest('#gatePatSubmit')){submitPat();return;}
+  if(e.target.closest('#gatePatCancel')){showPatPanel(false);return;}
   if(e.target.closest('#btnLogout')){logoutAll();return;}
   const mk=e.target.closest('[data-markrepo]');
   if(mk){openMarkEditor(mk.dataset.markrepo);return;}
@@ -151,6 +164,8 @@ document.addEventListener('click',e=>{
   if(b)toast('原型演示：未执行「<b>'+esc(b.dataset.action)+'</b>」。该操作在真机版本需要显式确认与可回滚备份。','warn');
 });
 function renderAll(){renderKPI();renderChips();renderRepos();renderBatch();}
+const patInput=$('#gatePatInput');
+if(patInput)patInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();submitPat();}});
 function toast(msg,kind){
   const t=$('#toast'); t.innerHTML=msg; t.className='toast show'+(kind?' '+kind:'');
   clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2800);

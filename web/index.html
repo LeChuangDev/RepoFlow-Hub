@@ -671,6 +671,15 @@ textarea.inp{resize:vertical;min-height:78px;line-height:1.55}
 .gate-btn.ghost:hover{color:var(--text);border-color:var(--primary)}
 .gate-dot{width:20px;height:20px;border-radius:6px;flex:none;background:rgba(255,255,255,.22);
   display:grid;place-items:center;font-size:10px;font-weight:700}
+.gate-pat{display:none;text-align:left;margin:2px 0 10px}
+.gate-pat .input-apple{width:100%;margin-bottom:8px}
+.gate-pat-hint{font-size:10.5px;color:var(--text-3);line-height:1.55;margin-bottom:10px}
+.gate-pat-hint a{color:var(--primary);text-decoration:underline}
+.gate-pat-row{display:flex;gap:8px}
+.gate-pat-row .gate-btn{margin-bottom:0}
+.gate-status{font-size:11px;line-height:1.5;margin-top:8px;min-height:15px;color:var(--text-3)}
+.gate-status.err{color:#c0392b}
+.gate-status.ok{color:#1f8a5b}
 .gate-foot{font-size:10.5px;color:var(--text-3);margin-top:14px;line-height:1.6}
 [data-theme="dark"] .gate-card{box-shadow:0 18px 48px rgba(0,0,0,.5)}
 /* ---------- v10 · 关于卡片与作者署名 ----------
@@ -702,11 +711,22 @@ textarea.inp{resize:vertical;min-height:78px;line-height:1.55}
     <h1>RepoFlow Hub</h1>
     <p>面向独立开发者的多仓库 Git 管理桌面工具</p>
     <div class="gate-author">作者 · 樂創</div>
-    <div class="gate-note"><b>当前没有关联任何账号。</b>登录后才会读取仓库列表。凭据保存在本机系统密钥链，静态站点不保存、不转发任何令牌；离线 Windows 版无需登录，也不访问网站。</div>
-    <button class="gate-btn" data-login="github"><span class="gate-dot">GH</span>使用 GitHub 账号登录</button>
-    <button class="gate-btn" data-login="gitee"><span class="gate-dot">GE</span>使用 Gitee 账号登录</button>
-    <button class="gate-btn ghost" data-login="local">本地离线模式（不登录，仅用本机文件）</button>
-    <div class="gate-foot"><span id="gateEdition"></span> · 使用者自带应用凭据（BYOA）：Client ID 可公开，密钥不进静态文件</div>
+    <div class="gate-note"><b>尚未连接任何账号。</b>连接后才会读取你的仓库列表。页面只与 <code>api.github.com</code> 通信，令牌仅保存在当前页面内存，不写入磁盘、不进入网址，刷新即失效。GitHub 的 OAuth 端点不允许跨域，静态站点无法直接弹出授权页，因此改用访问令牌方式。</div>
+    <button class="gate-btn" data-login="github"><span class="gate-dot">GH</span>使用 GitHub 访问令牌连接</button>
+    <div class="gate-pat" id="gatePat">
+      <input class="input-apple" id="gatePatInput" type="password" autocomplete="off" spellcheck="false" placeholder="ghp_… 或 github_pat_…">
+      <div class="gate-pat-hint">在 GitHub → Settings → Developer settings →
+        <a href="https://github.com/settings/tokens?type=beta" target="_blank" rel="noopener noreferrer">Fine-grained tokens</a>
+        新建，只勾选 <b>Contents: Read</b> 与目标仓库即可。令牌不会离开本页。</div>
+      <div class="gate-pat-row">
+        <button class="gate-btn" id="gatePatSubmit">连接并读取仓库</button>
+        <button class="gate-btn ghost" id="gatePatCancel">取消</button>
+      </div>
+      <div class="gate-status" id="gatePatStatus"></div>
+    </div>
+    <button class="gate-btn ghost" data-login="demo"><span class="gate-dot">DM</span>浏览演示数据（中性示例，不代表真实账号）</button>
+    <button class="gate-btn ghost" data-login="gitee"><span class="gate-dot">GE</span>Gitee 登录（尚未接入）</button>
+    <div class="gate-foot"><span id="gateEdition"></span> · 推送 / 删除等写操作仍为原型模拟，不会改动任何仓库</div>
   </div>
 </div>
 <div class="app">
@@ -752,7 +772,7 @@ textarea.inp{resize:vertical;min-height:78px;line-height:1.55}
 
     <div class="sidebar-foot">
       <div class="account">
-        <div class="avatar">LC</div>
+        <div class="avatar" id="sideAccountAvatar">—</div>
         <div>
           <div class="account-name" id="sideAccountName">未登录</div>
           <div class="account-sub" id="sideAccountSub">关联账号后显示</div>
@@ -1685,13 +1705,13 @@ const REPOS = [
   {id:'demoNotes', name:'demoNotes', group:'硬件工程 · 笔记', remote:'demoOrg/demoNotes', branch:'main',
    date:'2026-10-20', msg:'docs: fix markdown folder tree render error', size:'95 KB', sizeMB:.095,
    files:3, branches:2, attrs:false, kind:'hw', demo:{dirty:1, ahead:0, pr:0}},
-  {id:'jlc', name:'demoAssets', group:'硬件工程 · 资料', remote:'demoOrg/demoAssetsNotes', branch:'main',
+  {id:'demoAssets', name:'demoAssets', group:'硬件工程 · 资料', remote:'demoOrg/demoAssetsNotes', branch:'main',
    date:'2026-10-20', msg:'改变', size:'93 MB', sizeMB:93,
    files:6, branches:2, attrs:false, kind:'hw', demo:{dirty:0, ahead:0, pr:0}},
 ];
 const BIGFILES = [
   {n:'demo-manual.pdf', p:'demo/assets · 文件名含换行符', s:'74.5 MB', v:74.5, a:'LFS 追踪'},
-  {n:'嘉立创EDA专业版…设计认证考试实战详解.pdf', p:'demo/assets', s:'20.1 MB', v:20.1, a:'LFS 追踪'},
+  {n:'示例EDA专业版…设计认证考试实战详解.pdf', p:'demo/assets', s:'20.1 MB', v:20.1, a:'LFS 追踪'},
   {n:'demo-pcb-guide.pdf', p:'demo/assets', s:'14.4 MB', v:14.4, a:'LFS 追踪'},
   {n:'demo-archive.pdf', p:'demo/assets', s:'13.4 MB', v:13.4, a:'LFS 追踪'},
   {n:'demo-svd-a.svd', p:'demoFw · H743_Demo/EIDE/.pack/Keil/…', s:'5.1 MB', v:5.1, a:'加入 .gitignore'},
@@ -1827,7 +1847,7 @@ const LIVE=[
   {id:"demoSite",short:"demoSite",sha:"d3m0007",author:"樂創",date:"2026-11-06",msg:"style: 弱化首屏横向光痕，消除明显的横向分割线"},
   {id:"demoTpls",short:"demoTpls",sha:"d3m0004",author:"樂創",date:"2026-10-30",msg:"更新"},
   {id:"demoNotes",short:"demoNotes",sha:"d3m0009",author:"樂創",date:"2026-10-20",msg:"docs: fix markdown folder tree render error"},
-  {id:"jlc",short:"demoAssets",sha:"d3m0002",author:"樂創",date:"2026-10-20",msg:"改变"}
+  {id:"demoAssets",short:"demoAssets",sha:"d3m0002",author:"樂創",date:"2026-10-20",msg:"改变"}
 ];
 /* ================= v4 · 检索索引 / 通知 / 集群 / 规划分组 ================= */
 const SEARCH_INDEX=[
@@ -1851,7 +1871,7 @@ const INBOX_FILTERS=[{k:'all',n:'全部'},{k:'fail',n:'失败'},{k:'Actions',n:'
 const CLUSTER_MEMBERS=[
   {role:'固件工程',repo:'demoFw',id:'demoFw',ver:'v1.2.0',note:'4 个 Keil / EIDE 子工程'},
   {role:'MCU 模板',repo:'demoTpls',id:'demoTpls',ver:'—',note:'8 个 CMake 子工程'},
-  {role:'硬件资料',repo:'demoAssets',id:'jlc',ver:'—',note:'93 MB，待 LFS 迁移'},
+  {role:'硬件资料',repo:'demoAssets',id:'demoAssets',ver:'—',note:'93 MB，待 LFS 迁移'},
   {role:'上位机',repo:'demoTool',id:'demoTool',ver:'—',note:'已有 CI + Release 工作流'}
 ];
 const PLAN_TABS=[
@@ -1874,7 +1894,7 @@ function applyLive(){
   }));
 }
 
-const PERF=[{"id": "demoFw", "files": 861, "ms": 35.8, "fsmonitor": "unset", "untracked": "unset", "commitGraph": "unset"}, {"id": "demoTpls", "files": 530, "ms": 44.4, "fsmonitor": "unset", "untracked": "unset", "commitGraph": "unset"}, {"id": "jlc", "files": 6, "ms": 24.1, "fsmonitor": "unset", "untracked": "unset", "commitGraph": "unset"}, {"id": "demoSite", "files": 183, "ms": 29.7, "fsmonitor": "unset", "untracked": "unset", "commitGraph": "unset"}, {"id": "demoTool", "files": 181, "ms": 28.4, "fsmonitor": "unset", "untracked": "unset", "commitGraph": "unset"}, {"id": "demoNotes", "files": 3, "ms": 27.2, "fsmonitor": "unset", "untracked": "unset", "commitGraph": "unset"}];
+const PERF=[{"id": "demoFw", "files": 861, "ms": 35.8, "fsmonitor": "unset", "untracked": "unset", "commitGraph": "unset"}, {"id": "demoTpls", "files": 530, "ms": 44.4, "fsmonitor": "unset", "untracked": "unset", "commitGraph": "unset"}, {"id": "demoAssets", "files": 6, "ms": 24.1, "fsmonitor": "unset", "untracked": "unset", "commitGraph": "unset"}, {"id": "demoSite", "files": 183, "ms": 29.7, "fsmonitor": "unset", "untracked": "unset", "commitGraph": "unset"}, {"id": "demoTool", "files": 181, "ms": 28.4, "fsmonitor": "unset", "untracked": "unset", "commitGraph": "unset"}, {"id": "demoNotes", "files": 3, "ms": 27.2, "fsmonitor": "unset", "untracked": "unset", "commitGraph": "unset"}];
 const GIT_VER="git version 2.55.0.windows.3";
 
 /* ================= v5 · 调研结论 / 平台 / 同步策略 / 性能 ================= */
@@ -1934,14 +1954,14 @@ const SYNC_STATES={
   behind:{t:'Gitee 落后 2 个提交',cls:'t-amber'},diverged:{t:'分叉 · 需先分别 fetch',cls:'t-red'},
   na:{t:'LFS 仓库不适用镜像',cls:'t-grey'},none:{t:'未配置第二远端',cls:'t-grey'}
 };
-const DEMO_SYNC={demoTool:'diverged','demoSite':'behind','demoFw':'ok',demoTpls:'ok',jlc:'na','demoNotes':'none'};
+const DEMO_SYNC={demoTool:'diverged','demoSite':'behind','demoFw':'ok',demoTpls:'ok',demoAssets:'na','demoNotes':'none'};
 function syncStateOf(r){
-  if(!S.demo)return r.id==='jlc'?'na':'single';
+  if(!S.demo)return r.id==='demoAssets'?'na':'single';
   return DEMO_SYNC[r.id]||'none';
 }
 function visibilityOf(r){
   if(!S.demo)return {t:'待令牌读取',cls:'t-grey'};
-  return ['demoTool','jlc','demoFw'].includes(r.id)?{t:'私有',cls:'t-amber'}:{t:'公开',cls:'t-clean'};
+  return ['demoTool','demoAssets','demoFw'].includes(r.id)?{t:'私有',cls:'t-amber'}:{t:'公开',cls:'t-clean'};
 }
 function syncResults(){
   const rows=[{p:'GitHub',host:'github.com',ok:true,ms:'0.41s',log:'ok · fast-forward'}];
@@ -1981,7 +2001,7 @@ const ACCOUNTS=[
    scopes:['repo'],color:'#2E9E96',short:'GH',exp:'—',store:'尚未写入'}
 ];
 const ACCOUNT_REPOS={
-  'github-primary':['demoTool','demoSite','demoFw','demoTpls','jlc','demoNotes'],
+  'github-primary':['demoTool','demoSite','demoFw','demoTpls','demoAssets','demoNotes'],
   'gitee-personal':['demoTool','demoTpls'],
   'github-work':['demoTool','demoTpls']
 };
@@ -2171,7 +2191,7 @@ function markSeed(id){
 }
 function markKind(r){
   if(r.id==='demoNotes')return 'notes';
-  if(r.id==='jlc')return 'assets';
+  if(r.id==='demoAssets')return 'assets';
   return MARK_THEME[r.kind]?r.kind:'repo';
 }
 function escMark(s){
@@ -2231,7 +2251,7 @@ const S = {view:'dashboard', filter:'all', selected:new Set(), demo:false, theme
   repoLimit:PAGE_SIZE, autoLoadMore:false,
   markEditId:null, markDraft:null,
   removedRepos:new Set(), trash:[], pushRows:[], pushMode:'reflog', removeTab:'commits',
-  authed:false, authMode:'', edition:EDITION,
+  authed:false, authMode:'', edition:EDITION, live:false,
   lastPicked:null, sdSel:-1, sdItems:[]};
 const LS_KEY='repoflow-hub-v2';
 /* 首屏进入时是否带着显式路由（分享链接）：显式路由优先于本机上次偏好 */
@@ -2565,7 +2585,7 @@ function openRepo(id){
     <div class="code-preview" style="font-size:11.5px">${r.date} · ${r.branch}\n${esc(r.msg)}</div>
     <div class="drawer-sec">6 个仓库 .git 体积对比</div>
     <div class="size-bars">${REPOS.map(x=>`<span class="${x.id===r.id?'hi':''}" style="height:${Math.max(6,x.sizeMB/max*100)}%"><em>${esc(x.name.slice(0,6))}</em></span>`).join('')}</div>
-    <div class="notice" style="margin-top:var(--s6);margin-bottom:0">${r.id==='jlc'
+    <div class="notice" style="margin-top:var(--s6);margin-bottom:0">${r.id==='demoAssets'
       ? '该仓库 93 MB 却只有 6 个受控文件，最大单个 PDF 为 74.5 MB，且文件名含换行符。建议先做可逆的 LFS 后续追踪，历史重写单独评估。'
       : r.id==='demoFw'
       ? '含 Keil 工具链 .pack/*.svd 缓存文件（单个 4–5 MB）。适合加入 .gitignore 白名单，不属于 LFS 场景。'
@@ -3184,15 +3204,16 @@ function renderSideAccount(){
   const a=currentAccount();
   if(!a){$('#sideAccountName').textContent='未登录';$('#sideAccountSub').textContent='登录后显示仓库';return;}
   const n=(ACCOUNT_REPOS[a.id]||activeRepos().map(r=>r.id)).length;
-  $('#sideAccountName').textContent=a.platform==='local'?'本地离线模式':(a.state==='pending'?'未登录':a.user);
-  $('#sideAccountSub').textContent=(a.platform==='github'?'GitHub':a.platform==='gitee'?'Gitee':'本机文件')+' · '+n+' 个仓库';
+  $('#sideAccountAvatar').textContent=a.short||'—';
+  $('#sideAccountName').textContent=a.platform==='local'?'本地离线模式':a.platform==='demo'?'演示数据':(a.state==='pending'?'未登录':a.user);
+  $('#sideAccountSub').textContent=(a.platform==='github'?'GitHub':a.platform==='gitee'?'Gitee':a.platform==='demo'?'中性示例':'本机文件')+' · '+n+(a.platform==='local'?' 个演示仓库':' 个仓库');
 }
 function renderAccountCards(){
   const offlineNote=EDITION==='desktop'
     ?'<div class="notice" style="margin-bottom:var(--s4)"><b>离线 Windows 版：</b>本版本不连接网站、不需要任何账号，所有仓库信息来自本机文件。账号与授权页仅用于说明，登录入口已停用。</div>':'';
   if(!S.accounts.length){
     $('#accountCards').innerHTML=offlineNote+'<div class="empty">当前没有关联任何账号。登录后才会读取仓库列表。'
-      +(EDITION==='desktop'?'':'<div class="action-row" style="justify-content:center;margin-top:var(--s4)"><button class="btn btn-primary" data-login="github">登录 GitHub</button><button class="btn btn-ghost" data-login="gitee">登录 Gitee</button><button class="btn btn-ghost" data-login="local">本地离线模式</button></div>')
+      +(EDITION==='desktop'?'':'<div class="action-row" style="justify-content:center;margin-top:var(--s4)"><button class="btn btn-primary" data-login="github">连接 GitHub</button><button class="btn btn-ghost" data-login="demo">演示数据</button><button class="btn btn-ghost" data-login="gitee">Gitee（未接入）</button></div>')
       +'</div>';
     $('#acctSummary').textContent='0 个账号 · 0 个已授权';
     renderSideAccount();
@@ -3221,7 +3242,9 @@ function renderAccountCards(){
   });
   $$('[data-revoke]').forEach(b=>b.onclick=()=>{
     const a=S.accounts.find(x=>x.id===b.dataset.revoke);
-    if(a){a.state='revoked';a.store='已清除密钥链条目';renderAccountCards();renderSideAccount();toast('已撤销 '+esc(a.label)+' 的授权。','warn');}
+    if(!a)return;
+    if(a.id===GH_ACCOUNT_ID){logoutAll();return;}
+    a.state='revoked';a.store='已清除密钥链条目';renderAccountCards();renderSideAccount();toast('已撤销 '+esc(a.label)+' 的授权。','warn');
   });
   $('#acctSummary').textContent=S.accounts.length+' 个账号 · '+S.accounts.filter(a=>a.state==='active').length+' 个已授权';
   renderSideAccount();
@@ -3259,14 +3282,14 @@ function renderWizard(){
   $('#btnNextStep').disabled=S.wizardStep>=AUTH_STEPS.length||S.wizardStep<0;
 }
 function finishAuth(){
-  const p=$('#wizPlatform').value,label=p==='github'?'新 GitHub 账号':'新 Gitee 账号';
-  const id='custom-'+Date.now().toString(36);
-  S.accounts.push({id,platform:p,host:p==='github'?'github.com':'gitee.com',user:'已登录账号',label,state:'active',
-    scopes:[...S.scopes],color:p==='github'?'#6C63FF':'#C71D23',short:p==='github'?'GH':'GE',
-    exp:'刷新令牌 6 个月',store:'keychain://repoflow/'+id});
-  ACCOUNT_REPOS[id]=['demoTool'];
-  S.wizardStep=-1;renderWizard();renderAccountCards();
-  toast('已关联 '+esc(label)+'（模拟，未发起真实网络请求）。','success');
+  const p=$('#wizPlatform').value;
+  S.wizardStep=-1;renderWizard();
+  if(p==='github'){
+    showPatPanel(true);
+    toast('向导只说明 OAuth 流程；本页用访问令牌完成真实连接，请粘贴令牌。','warn');
+    return;
+  }
+  toast('Gitee 真实登录尚未接入（需要后端换 token），可先用 GitHub 访问令牌或演示数据。','warn');
 }
 
 /* ================= v6 · 开源就绪 ================= */
@@ -3569,29 +3592,18 @@ function renderTrash(){
   $$('[data-purge]').forEach(b=>b.onclick=()=>{purgeTrash(b.dataset.purge);refreshAfterRemoval();toast('已清除工具内记录；磁盘仓库文件未改动。','warn');});
 }
 /* ================= v9 · 登录门与构建形态 =================
-   web     默认没有任何账号，必须自己登录（GitHub / Gitee / 本地离线模式）
+   web     默认没有任何账号，必须自己连接（GitHub 访问令牌 / 演示数据）
    desktop 离线 Windows 版，自动进入本地模式，不显示登录门、不连接网站
    dev     本机开发副本，载入中性演示账号便于预览
-   登录是确定性模拟：不发起网络请求、不读取或存储任何真实凭据。       */
+   GitHub 真实登录见 12b-github-auth.js：令牌只存页面内存。
+   推送、删除等写操作仍是原型模拟，不执行任何 Git 写操作。            */
 function showGate(){
   const g=$('#loginGate');if(!g)return;
   g.style.display='grid';
   const note=$('#gateEdition');
-  if(note)note.textContent=EDITION==='web'?'网站版 · 凭据只存本机，不经过站点':EDITION==='desktop'?'离线 Windows 版':'开发副本';
+  if(note)note.textContent=EDITION==='web'?'网站版 · 访问令牌只存本页内存':EDITION==='desktop'?'离线 Windows 版':'开发副本';
 }
 function hideGate(){const g=$('#loginGate');if(g)g.style.display='none';}
-function loginAs(templateId){
-  const tpl=ACCOUNTS.find(a=>a.id===templateId);
-  if(!tpl)return null;
-  let a=S.accounts.find(x=>x.id===templateId);
-  if(!a){a=Object.assign({},tpl);S.accounts.push(a);}
-  a.state='active';a.user='已登录账号';a.store='keychain://repoflow/'+templateId;
-  a.exp='按平台策略自动刷新';
-  S.activeAccount=a.id;S.authed=true;S.authMode=tpl.platform;
-  hideGate();renderAccountCards();renderSideAccount();renderAll();rerenderRendered();
-  toast('已登录 '+(tpl.platform==='github'?'GitHub':'Gitee')+'（模拟，未发起网络请求）。','success');
-  return a;
-}
 function enterLocalMode(){
   const id='local-offline';
   if(!S.accounts.some(a=>a.id===id))S.accounts.unshift({
@@ -3604,9 +3616,10 @@ function enterLocalMode(){
   if(nav)nav.textContent='关于离线版';
 }
 function logoutAll(){
+  githubLogout();
   S.accounts=[];S.activeAccount='';S.authed=false;S.authMode='';
-  renderAccountCards();renderSideAccount();renderAll();
-  toast('已退出登录，本机关联记录已清除。','warn');
+  renderAccountCards();renderSideAccount();renderAll();renderDemoState();
+  toast('已退出登录，令牌与账号信息已从本页清除。','warn');
   if(EDITION==='web')showGate();
 }
 function bootstrapEdition(){
@@ -3617,6 +3630,144 @@ function bootstrapEdition(){
     S.accounts=ACCOUNTS.map(a=>Object.assign({},a,{state:'active',user:'已登录账号',store:'keychain://repoflow/'+a.id}));
     S.activeAccount='github-primary';S.authed=true;
     renderSideAccount();
+  }
+}
+/* ================= 真实 GitHub 登录 · 访问令牌 =================
+   为什么不用 OAuth 弹窗：github.com 的 /login/device/code 与
+   /login/oauth/access_token 都不返回 Access-Control-Allow-Origin，
+   浏览器里无法跨域换取 token；而 api.github.com 允许跨域。
+   因此这里让用户自带一个最小权限的访问令牌（BYOA）。
+
+   安全约束：
+   1. 令牌只存在本模块闭包变量里，不写 localStorage / cookie / 网址参数；
+   2. 只与 https://api.github.com 通信，不经过任何第三方代理；
+   3. 错误提示里不回显令牌内容；
+   4. 刷新页面即失效，退出登录立即清空。                              */
+const GH_API='https://api.github.com';
+const GH_ACCOUNT_ID='github-live';
+const DEMO_REPOS=REPOS.map(r=>Object.assign({},r));
+
+let GH_TOKEN='';
+
+function ghTokenFormatOk(t){
+  return /^[A-Za-z0-9_]{20,255}$/.test(String(t||'').trim());
+}
+
+async function ghGet(path,token){
+  const ctl=new AbortController();
+  const timer=setTimeout(()=>ctl.abort(),20000);
+  try{
+    const res=await fetch(GH_API+path,{
+      headers:{'Accept':'application/vnd.github+json','Authorization':'Bearer '+token,'X-GitHub-Api-Version':'2022-11-28'},
+      signal:ctl.signal,cache:'no-store'
+    });
+    if(res.status===401)throw new Error('令牌无效或已过期（HTTP 401），请重新生成');
+    if(res.status===403)throw new Error('令牌权限不足或已触发速率限制（HTTP 403）');
+    if(!res.ok)throw new Error('GitHub 接口返回 HTTP '+res.status);
+    return await res.json();
+  }catch(err){
+    if(err.name==='AbortError')throw new Error('连接 GitHub 超时，请检查网络后重试');
+    if(err instanceof TypeError)throw new Error('无法连接 api.github.com，请检查网络或代理设置');
+    throw err;
+  }finally{clearTimeout(timer);}
+}
+
+function ghKindOf(language){
+  const l=String(language||'');
+  if(/C\+\+|C#|Assembly|Rust|Verilog|CMake/.test(l)||l==='C')return 'fw';
+  if(/HTML|CSS|JavaScript|TypeScript|Vue|Svelte/.test(l))return 'web';
+  if(/Python|Shell|Batchfile|PowerShell/.test(l))return 'tool';
+  return 'tool';
+}
+
+/* GitHub REST /user/repos 的单条记录 → 本工具的仓库卡片模型 */
+function ghRepoToLocal(r){
+  const mb=Math.max(.05,(Number(r.size)||0)/1024);
+  return {
+    id:'gh-'+r.id,name:r.name,group:r.language||'未分类',remote:r.full_name,
+    branch:r.default_branch||'main',
+    date:String(r.pushed_at||r.updated_at||'').slice(0,10),
+    msg:r.description||'（该仓库没有简介）',
+    size:mb>=1?mb.toFixed(1)+' MB':Math.max(1,Math.round(mb*1024))+' KB',sizeMB:mb,
+    files:0,branches:1,attrs:false,kind:ghKindOf(r.language),live:true,
+    demo:{dirty:0,ahead:0,pr:0}
+  };
+}
+
+function applyGitHubSession(user,repos){
+  S.demo=false;S.live=true;
+  const acct={id:GH_ACCOUNT_ID,platform:'github',host:'github.com',user:user.login||'unknown',
+    label:'GitHub · '+(user.login||'unknown'),state:'active',
+    scopes:['repo（按令牌授权范围）'],color:'#6C63FF',short:'GH',
+    exp:'随令牌失效',store:'仅本页内存 · 刷新即失效',avatar:user.avatar_url||''};
+  S.accounts=[acct];
+  S.activeAccount=GH_ACCOUNT_ID;S.authed=true;S.authMode='github';
+  ACCOUNT_REPOS[GH_ACCOUNT_ID]=repos.map(r=>r.id);
+  REPOS.length=0;repos.forEach(r=>REPOS.push(r));
+  S.removedRepos.clear();S.selected.clear();S.repoLimit=PAGE_SIZE;
+}
+
+async function githubLogin(rawToken){
+  const token=String(rawToken||'').trim();
+  if(!ghTokenFormatOk(token))throw new Error('令牌格式不正确：应为 20 位以上的字母、数字或下划线组合');
+  const user=await ghGet('/user',token);
+  const list=await ghGet('/user/repos?per_page=100&affiliation=owner&sort=updated',token);
+  const repos=(Array.isArray(list)?list:[]).map(ghRepoToLocal);
+  GH_TOKEN=token;                       // 校验通过后才保留
+  applyGitHubSession(user,repos);
+  hideGate();showPatPanel(false);renderAccountCards();renderSideAccount();renderAll();renderDemoState();rerenderRendered();
+  toast('已连接 GitHub <b>@'+esc(user.login||'')+'</b>，读取到 '+repos.length+' 个仓库；令牌只保存在本页内存。','success');
+  return {user,repos};
+}
+
+function githubLogout(){
+  GH_TOKEN='';
+  S.live=false;
+  delete ACCOUNT_REPOS[GH_ACCOUNT_ID];
+  REPOS.length=0;DEMO_REPOS.forEach(r=>REPOS.push(Object.assign({},r)));
+}
+
+function enterDemoMode(){
+  S.demo=true;S.live=false;
+  const acct={id:'demo-mode',platform:'demo',host:'示例数据',user:'演示模式',label:'演示数据（中性示例）',
+    state:'active',scopes:['只读示例'],color:'#2E9E96',short:'DM',exp:'不适用',store:'不保存凭据'};
+  S.accounts=[acct];
+  S.activeAccount='demo-mode';S.authed=true;S.authMode='demo';
+  ACCOUNT_REPOS['demo-mode']=REPOS.map(r=>r.id);
+  hideGate();renderAccountCards();renderSideAccount();renderAll();renderDemoState();rerenderRendered();
+  toast('已进入演示模式：以下为中性示例数据，不是你的账号，也不会读取任何远端仓库。','warn');
+}
+
+function showPatPanel(on){
+  const panel=$('#gatePat');if(!panel)return;
+  if(on)showGate();
+  panel.style.display=on?'block':'none';
+  if(on){
+    setPatStatus('');
+    const input=$('#gatePatInput');
+    if(input)setTimeout(()=>input.focus(),50);
+  }
+}
+
+function setPatStatus(msg,kind){
+  const el=$('#gatePatStatus');if(!el)return;
+  el.textContent=msg||'';
+  el.className='gate-status'+(kind?' '+kind:'');
+}
+
+async function submitPat(){
+  const input=$('#gatePatInput'),btn=$('#gatePatSubmit');
+  if(!input||!btn)return;
+  const token=input.value.trim();
+  if(!token){setPatStatus('请先粘贴访问令牌','err');return;}
+  btn.disabled=true;setPatStatus('正在校验令牌并读取仓库列表…');
+  try{
+    await githubLogin(token);
+    input.value='';
+  }catch(err){
+    setPatStatus(err.message||'登录失败','err');
+  }finally{
+    btn.disabled=false;
   }
 }
 /* ================= v10 · 作者署名、关于面板与隐私隔离自检 =================
@@ -3634,12 +3785,12 @@ const EDGEONE_STEPS=[
   '自定义域名可关联生产或预览环境，域名始终指向该环境最近一次成功部署。'
 ];
 const PRIVACY_FACTS=[
-  '单文件静态页面：无后端、无数据库、无服务端会话，页面不会调用任何读取账号的接口。',
-  '登录为本机确定性模拟：账号只存在于当前页面内存，不写入 localStorage（浏览器本地存储）、cookie（小型站点数据）或网址参数；刷新页面即回到未登录。',
+  '单文件静态页面：无后端、无数据库、无服务端会话；只有在你主动连接 GitHub 时才会调用 api.github.com，其余时间不发起任何网络请求。',
+  'GitHub 登录使用你自己创建的访问令牌：令牌只存在当前页面内存，不写入 localStorage（浏览器本地存储）、cookie（小型站点数据）或网址参数；刷新页面即失效，退出登录立即清空。',
   '主题、筛选、折叠状态与项目图标偏好只写入当前浏览器的 localStorage；不同设备、不同浏览器、隐私窗口之间互不可见。',
-  '公开产物使用中性示例仓库与示例文件名，查看网页源码也看不到作者的账号、真实仓库清单、本机路径或提交短哈希。',
-  '公开产物零外部资源请求：不加载远程字体、脚本、图片或统计代码，字体使用设备自带系统字体。',
-  '离线 Windows 版与网站版各自使用独立的浏览器存储，两边的仓库列表、图标与登录状态不会同步。'
+  '公开产物使用中性示例仓库与示例文件名，查看网页源码也看不到作者的账号、真实仓库清单、本机路径或提交短哈希（你自己登录后拉取的真实仓库只显示在本次会话）。',
+  '公开产物不加载远程字体、脚本、图片或统计代码，字体使用设备自带系统字体；请求只发往 api.github.com。',
+  '离线 Windows 版与网站版各自使用独立的浏览器存储，两边的仓库列表、图标与登录状态不会同步；离线版不联网。'
 ];
 
 function editionName(){return EDITION_NAME[EDITION]||'未知形态';}
@@ -3668,8 +3819,8 @@ function privacyAudit(){
     {n:'cookie 为空',ok:document.cookie==='',note:document.cookie?'存在 cookie':'未写入任何 cookie'},
     {n:'网址不含身份或令牌参数',ok:!/[?&](token|user|account|login)=/i.test(location.search),note:location.search||'无查询参数'},
     {n:'无外部脚本 / 样式 / 图片',ok:external===0,note:devFontOnly?'开发副本保留远程字体（公开产物已移除）':external+' 个外部标签'},
-    {n:'公开版为中性示例数据',ok:EDITION==='dev'||REPOS.every(r=>r.remote.indexOf('demoOrg/')===0),
-     note:EDITION==='dev'?'开发副本含本机实测数据，不对外发布':'公开产物已中性化（构建期扫描校验）'},
+    {n:'公开版为中性示例数据',ok:EDITION==='dev'||S.live||REPOS.every(r=>r.remote.indexOf('demoOrg/')===0),
+     note:EDITION==='dev'?'开发副本含本机实测数据，不对外发布':S.live?'当前为你登录后拉取的实时数据，仅存在于本页内存（离开即清空）':'公开产物已中性化（构建期扫描校验）'},
     {n:'账号仅存页面内存',ok:!keys.some(k=>/accounts|authed/i.test(k)),note:'刷新后需重新登录'}
   ];
 }
@@ -3712,8 +3863,12 @@ $$('[data-theme-set]').forEach(b=>b.onclick=()=>applyTheme(b.dataset.themeSet));
 /* 数据来源切换的界面部分单独抽出，供浏览器前进/后退恢复状态时复用 */
 function renderDemoState(){
   $('#segDemo').classList.toggle('on',S.demo); $('#segReal').classList.toggle('on',!S.demo);
-  $('#snapshotText').textContent=S.demo?'演示态 · 模拟脏工作区 / 未推送 / PR 数据 · 2026-11-06':'实测快照 · 2026-11-06 14:37 · 6 个仓库';
-  $('#timelineNote').innerHTML=S.demo
+  $('#snapshotText').textContent=S.live
+    ? 'GitHub 实时快照 · '+REPOS.length+' 个仓库 · 只读'
+    : S.demo?'演示态 · 模拟脏工作区 / 未推送 / PR 数据 · 2026-11-06':'实测快照 · 2026-11-06 14:37 · '+REPOS.length+' 个仓库';
+  $('#timelineNote').innerHTML=S.live
+    ? '数据来自 GitHub REST API（只读）：脏工作区、未推送提交与 PR 数量需要本机 git 才能得知，因此统一显示 0；推送 / 删除等写操作在原型里仍为模拟。'
+    : S.demo
     ? '当前为<b>演示态</b>：脏工作区、未推送提交与 PR 数量为模拟值，用于验证筛选器、卡片状态与批量操作栏的界面表现；不是本机真实 Git 状态。'
     : '本机 6 个仓库全部处于 <b>clean</b> 状态且仅有 main 分支，因此「未提交变更 / 未推送 / 分支差异」三类卡片数据均为 0。切换「演示态」可查看这些状态出现时的界面表现。';
 }
@@ -3765,7 +3920,7 @@ $('#btnDownloadCfg').onclick=downloadCfg;
 $('#btnCopySync').onclick=()=>copyText($('#syncCmd').textContent,' 同步命令');
 $('#btnRunSync').onclick=()=>{S.syncRan=true;renderSyncResults();toast('逐远端同步完成：结果按平台分别记录。','success');};
 $('#btnCopyPerf').onclick=()=>copyText(perfCommand(),' 性能配置命令');
-$('#btnStartAuth').onclick=()=>{S.wizardStep=0;renderWizard();toast('登录向导已启动（模拟，不发起真实网络请求）。','success');};
+$('#btnStartAuth').onclick=()=>{S.wizardStep=0;renderWizard();toast('登录向导用于展示 OAuth 流程；本页的真实连接使用访问令牌。','success');};
 $('#btnNextStep').onclick=()=>{S.wizardStep++;renderWizard();if(S.wizardStep>=AUTH_STEPS.length)finishAuth();};
 $('#wizPlatform').onchange=renderByoaUrl;
 $('#byoaClientId').oninput=renderByoaUrl;
@@ -3840,7 +3995,16 @@ document.addEventListener('click',e=>{
   if(e.target.closest('#btnMarks')){openMarkEditor();return;}
   if(e.target.closest('[data-about]')){openAbout();return;}
   const lg=e.target.closest('[data-login]');
-  if(lg){const v=lg.dataset.login;if(v==='local')enterLocalMode();else loginAs(v==='gitee'?'gitee-personal':'github-primary');return;}
+  if(lg){
+    const v=lg.dataset.login;
+    if(v==='github'){showPatPanel(true);return;}
+    if(v==='demo'){enterDemoMode();return;}
+    if(v==='local'){enterLocalMode();return;}
+    toast('Gitee 真实登录尚未接入：Gitee 的 OAuth 同样需要后端换取 token。可先用 GitHub 访问令牌或演示数据。','warn');
+    return;
+  }
+  if(e.target.closest('#gatePatSubmit')){submitPat();return;}
+  if(e.target.closest('#gatePatCancel')){showPatPanel(false);return;}
   if(e.target.closest('#btnLogout')){logoutAll();return;}
   const mk=e.target.closest('[data-markrepo]');
   if(mk){openMarkEditor(mk.dataset.markrepo);return;}
@@ -3852,6 +4016,8 @@ document.addEventListener('click',e=>{
   if(b)toast('原型演示：未执行「<b>'+esc(b.dataset.action)+'</b>」。该操作在真机版本需要显式确认与可回滚备份。','warn');
 });
 function renderAll(){renderKPI();renderChips();renderRepos();renderBatch();}
+const patInput=$('#gatePatInput');
+if(patInput)patInput.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();submitPat();}});
 function toast(msg,kind){
   const t=$('#toast'); t.innerHTML=msg; t.className='toast show'+(kind?' '+kind:'');
   clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),2800);
@@ -3896,7 +4062,7 @@ function runSelfTest(){
   t('演示态脏仓库 KPI=3',$('#kpiRow').children[1].querySelector('.kpi-val').textContent==='3',$('#kpiRow').children[1].querySelector('.kpi-val').textContent);
   t('演示态筛选得到 3 张卡片',$$('.card').length===3,$$('.card').length);
   setDemo(false);S.filter='all';renderAll();
-  openRepo('jlc');
+  openRepo('demoAssets');
   t('仓库详情抽屉打开',$('#drawer').classList.contains('show'));
   t('抽屉显示仓库远端地址',$('#drawerRemote').textContent.startsWith('https://github.com/')&&$('#drawerRemote').textContent.endsWith('.git'));
   t('抽屉体积对比含 6 根柱',$$('.size-bars span').length===6,$$('.size-bars span').length);
@@ -3957,7 +4123,7 @@ function runSelfTest(){
   kc.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter',bubbles:true}));
   t('卡片可键盘打开详情',S.drawer==='detail',S.drawer);
   closeDrawer();S.selected.clear();renderBatch();
-  S.selected=new Set(['demoTool','jlc']);renderBatch();openTasks('批量拉取 / 同步');
+  S.selected=new Set(['demoTool','demoAssets']);renderBatch();openTasks('批量拉取 / 同步');
   t('批量任务生成 2 行',$$('.task-row').length===2,$$('.task-row').length);
   runTasks(true);
   t('任务确定性推进到全部完成',$$('.st-done').length===2,$$('.st-done').length);
@@ -4120,7 +4286,7 @@ function runSelfTest(){
   $('#cmdClear').click();
   t('清空查询恢复命令列表',$$('.cmdk-item').length>0);
   closeCmdk();
-  S.selected=new Set(['demoTool','jlc']);renderBatch();openTasks('批量拉取 / 同步');runTasks(true);
+  S.selected=new Set(['demoTool','demoAssets']);renderBatch();openTasks('批量拉取 / 同步');runTasks(true);
   t('批量任务提供撤销按钮',!!$('#btnUndo'));
   $('#btnUndo').click();
   t('撤销后清空任务记录',$('#drawerBody').textContent.includes('已撤销本次批量操作'));
@@ -4142,7 +4308,8 @@ function runSelfTest(){
   $('#btnStartAuth').click();
   t('登录向导 6 步',$$('.wiz-step').length===6,$$('.wiz-step').length);
   for(let i=0;i<6;i++)$('#btnNextStep').click();
-  t('完成后账号数增加到 4',$$('#accountCards .acct-card').length===4,$$('#accountCards .acct-card').length);
+  t('向导不再伪造账号',$$('#accountCards .acct-card').length===3&&$('#gatePat').style.display==='block',$('#accountCards .acct-card').length+' / '+$('#gatePat').style.display);
+  showPatPanel(false);hideGate();
   $$('[data-setacct]')[1].click();
   t('切换账号改变仓库集合',$$('.card').length===2,$$('.card').length);
   $$('[data-setacct]')[0].click();
@@ -4262,7 +4429,16 @@ function runSelfTest(){
   t('开发副本默认不显示登录门',getComputedStyle($('#loginGate')).display==='none');
   showGate();
   t('登录门列出 3 种进入方式',$('#loginGate').style.display!=='none'&&$$('#loginGate [data-login]').length===3);
-  t('登录函数为确定性模拟',typeof loginAs==='function'&&typeof enterLocalMode==='function'&&typeof logoutAll==='function');
+  t('真实登录入口存在',typeof githubLogin==='function'&&typeof ghRepoToLocal==='function'&&typeof submitPat==='function');
+  t('令牌格式校验',ghTokenFormatOk('ghp_'+'a'.repeat(36))&&ghTokenFormatOk('github_pat_'+'b'.repeat(30))&&!ghTokenFormatOk('short')&&!ghTokenFormatOk('ghp_with space'),'ok');
+  const sampleRepo=ghRepoToLocal({id:7,name:'demo-app',full_name:'demoOrg/demo-app',default_branch:'main',size:2048,language:'JavaScript',description:'示例',pushed_at:'2026-11-06T00:00:00Z'});
+  t('API 仓库映射到仓库卡片',sampleRepo.id==='gh-7'&&sampleRepo.remote==='demoOrg/demo-app'&&sampleRepo.sizeMB===2&&sampleRepo.kind==='web'&&sampleRepo.branch==='main',sampleRepo.id);
+  showPatPanel(true);
+  t('令牌面板可展开',$('#gatePat').style.display==='block');
+  showPatPanel(false);
+  enterDemoMode();
+  t('演示模式明确标注为示例',S.authMode==='demo'&&S.accounts.length===1&&S.accounts[0].id==='demo-mode'&&S.accounts[0].label.includes('演示'));
+  logoutAll();
   hideGate();
   /* ---- v10：作者署名 / 关于面板 / 隐私隔离 ---- */
   setView('dashboard');

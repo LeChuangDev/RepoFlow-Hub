@@ -262,7 +262,8 @@ function runSelfTest(){
   $('#btnStartAuth').click();
   t('登录向导 6 步',$$('.wiz-step').length===6,$$('.wiz-step').length);
   for(let i=0;i<6;i++)$('#btnNextStep').click();
-  t('完成后账号数增加到 4',$$('#accountCards .acct-card').length===4,$$('#accountCards .acct-card').length);
+  t('向导不再伪造账号',$$('#accountCards .acct-card').length===3&&$('#gatePat').style.display==='block',$('#accountCards .acct-card').length+' / '+$('#gatePat').style.display);
+  showPatPanel(false);hideGate();
   $$('[data-setacct]')[1].click();
   t('切换账号改变仓库集合',$$('.card').length===2,$$('.card').length);
   $$('[data-setacct]')[0].click();
@@ -382,7 +383,16 @@ function runSelfTest(){
   t('开发副本默认不显示登录门',getComputedStyle($('#loginGate')).display==='none');
   showGate();
   t('登录门列出 3 种进入方式',$('#loginGate').style.display!=='none'&&$$('#loginGate [data-login]').length===3);
-  t('登录函数为确定性模拟',typeof loginAs==='function'&&typeof enterLocalMode==='function'&&typeof logoutAll==='function');
+  t('真实登录入口存在',typeof githubLogin==='function'&&typeof ghRepoToLocal==='function'&&typeof submitPat==='function');
+  t('令牌格式校验',ghTokenFormatOk('ghp_'+'a'.repeat(36))&&ghTokenFormatOk('github_pat_'+'b'.repeat(30))&&!ghTokenFormatOk('short')&&!ghTokenFormatOk('ghp_with space'),'ok');
+  const sampleRepo=ghRepoToLocal({id:7,name:'demo-app',full_name:'demoOrg/demo-app',default_branch:'main',size:2048,language:'JavaScript',description:'示例',pushed_at:'2026-11-06T00:00:00Z'});
+  t('API 仓库映射到仓库卡片',sampleRepo.id==='gh-7'&&sampleRepo.remote==='demoOrg/demo-app'&&sampleRepo.sizeMB===2&&sampleRepo.kind==='web'&&sampleRepo.branch==='main',sampleRepo.id);
+  showPatPanel(true);
+  t('令牌面板可展开',$('#gatePat').style.display==='block');
+  showPatPanel(false);
+  enterDemoMode();
+  t('演示模式明确标注为示例',S.authMode==='demo'&&S.accounts.length===1&&S.accounts[0].id==='demo-mode'&&S.accounts[0].label.includes('演示'));
+  logoutAll();
   hideGate();
   /* ---- v10：作者署名 / 关于面板 / 隐私隔离 ---- */
   setView('dashboard');

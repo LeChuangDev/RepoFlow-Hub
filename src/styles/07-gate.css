@@ -24,5 +24,14 @@
 .gate-btn.ghost:hover{color:var(--text);border-color:var(--primary)}
 .gate-dot{width:20px;height:20px;border-radius:6px;flex:none;background:rgba(255,255,255,.22);
   display:grid;place-items:center;font-size:10px;font-weight:700}
+.gate-pat{display:none;text-align:left;margin:2px 0 10px}
+.gate-pat .input-apple{width:100%;margin-bottom:8px}
+.gate-pat-hint{font-size:10.5px;color:var(--text-3);line-height:1.55;margin-bottom:10px}
+.gate-pat-hint a{color:var(--primary);text-decoration:underline}
+.gate-pat-row{display:flex;gap:8px}
+.gate-pat-row .gate-btn{margin-bottom:0}
+.gate-status{font-size:11px;line-height:1.5;margin-top:8px;min-height:15px;color:var(--text-3)}
+.gate-status.err{color:#c0392b}
+.gate-status.ok{color:#1f8a5b}
 .gate-foot{font-size:10.5px;color:var(--text-3);margin-top:14px;line-height:1.6}
 [data-theme="dark"] .gate-card{box-shadow:0 18px 48px rgba(0,0,0,.5)}

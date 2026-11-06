@@ -38,8 +38,11 @@ LITERAL = {
     '嘉立创EDA专业版电子版设计认证考试实战详解.pdf': 'demo-manual.pdf',
     '西湖-单面板布线(PCB)设计指南_1-99.pdf': 'demo-pcb-guide.pdf',
     '十年社群…资料合辑.pdf': 'demo-archive.pdf',
+    '嘉立创EDA专业版': '示例EDA专业版',
     '嘉立创资料': 'demoAssets',
+    '嘉立创': '示例',
     'pcb-basics-notes': 'demoNotes',
+    'jlc': 'demoAssets',
     'lechuang-site': 'demoSite',
     'lechung-site': 'demoSite',
     'calcbridge': 'demoTool',
@@ -65,6 +68,8 @@ FORBIDDEN = [
     'Templates',
     'pcb-basics-notes',
     '嘉立创资料',
+    '嘉立创',
+    'jlc',
 ]
 
 

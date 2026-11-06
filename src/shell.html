@@ -36,11 +36,22 @@
     <h1>RepoFlow Hub</h1>
     <p>面向独立开发者的多仓库 Git 管理桌面工具</p>
     <div class="gate-author">作者 · 樂創</div>
-    <div class="gate-note"><b>当前没有关联任何账号。</b>登录后才会读取仓库列表。凭据保存在本机系统密钥链，静态站点不保存、不转发任何令牌；离线 Windows 版无需登录，也不访问网站。</div>
-    <button class="gate-btn" data-login="github"><span class="gate-dot">GH</span>使用 GitHub 账号登录</button>
-    <button class="gate-btn" data-login="gitee"><span class="gate-dot">GE</span>使用 Gitee 账号登录</button>
-    <button class="gate-btn ghost" data-login="local">本地离线模式（不登录，仅用本机文件）</button>
-    <div class="gate-foot"><span id="gateEdition"></span> · 使用者自带应用凭据（BYOA）：Client ID 可公开，密钥不进静态文件</div>
+    <div class="gate-note"><b>尚未连接任何账号。</b>连接后才会读取你的仓库列表。页面只与 <code>api.github.com</code> 通信，令牌仅保存在当前页面内存，不写入磁盘、不进入网址，刷新即失效。GitHub 的 OAuth 端点不允许跨域，静态站点无法直接弹出授权页，因此改用访问令牌方式。</div>
+    <button class="gate-btn" data-login="github"><span class="gate-dot">GH</span>使用 GitHub 访问令牌连接</button>
+    <div class="gate-pat" id="gatePat">
+      <input class="input-apple" id="gatePatInput" type="password" autocomplete="off" spellcheck="false" placeholder="ghp_… 或 github_pat_…">
+      <div class="gate-pat-hint">在 GitHub → Settings → Developer settings →
+        <a href="https://github.com/settings/tokens?type=beta" target="_blank" rel="noopener noreferrer">Fine-grained tokens</a>
+        新建，只勾选 <b>Contents: Read</b> 与目标仓库即可。令牌不会离开本页。</div>
+      <div class="gate-pat-row">
+        <button class="gate-btn" id="gatePatSubmit">连接并读取仓库</button>
+        <button class="gate-btn ghost" id="gatePatCancel">取消</button>
+      </div>
+      <div class="gate-status" id="gatePatStatus"></div>
+    </div>
+    <button class="gate-btn ghost" data-login="demo"><span class="gate-dot">DM</span>浏览演示数据（中性示例，不代表真实账号）</button>
+    <button class="gate-btn ghost" data-login="gitee"><span class="gate-dot">GE</span>Gitee 登录（尚未接入）</button>
+    <div class="gate-foot"><span id="gateEdition"></span> · 推送 / 删除等写操作仍为原型模拟，不会改动任何仓库</div>
   </div>
 </div>
 <div class="app">
@@ -86,7 +97,7 @@
 
     <div class="sidebar-foot">
       <div class="account">
-        <div class="avatar">LC</div>
+        <div class="avatar" id="sideAccountAvatar">—</div>
         <div>
           <div class="account-name" id="sideAccountName">未登录</div>
           <div class="account-sub" id="sideAccountSub">关联账号后显示</div>
