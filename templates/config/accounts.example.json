@@ -1,0 +1,62 @@
+{
+  "$schema": "repoflow/accounts.v1",
+  "_comment": "账号注册表样例。全部为占位值；令牌只以密钥链引用形式记录，绝不写明文。每个账号拥有独立的 cacheNamespace，便于多用户、多平台数据隔离。",
+  "activeAccountId": "github-primary",
+  "accounts": [
+    {
+      "id": "github-primary",
+      "platform": "github",
+      "host": "github.com",
+      "displayName": "我的 GitHub",
+      "username": "example-user",
+      "authMethod": "oauth-pkce",
+      "scopes": ["repo", "read:org"],
+      "credentialRef": "keychain://repoflow/github-primary/access_token",
+      "refreshRef": "keychain://repoflow/github-primary/refresh_token",
+      "cacheNamespace": "github-primary",
+      "tokenExpiresAt": null,
+      "visibility": "public+private",
+      "status": "active"
+    },
+    {
+      "id": "github-work",
+      "platform": "github",
+      "host": "github.com",
+      "displayName": "第二个 GitHub 账号",
+      "username": "example-user-2",
+      "authMethod": "oauth-pkce",
+      "scopes": ["repo"],
+      "credentialRef": "keychain://repoflow/github-work/access_token",
+      "refreshRef": "keychain://repoflow/github-work/refresh_token",
+      "cacheNamespace": "github-work",
+      "tokenExpiresAt": null,
+      "visibility": "public+private",
+      "status": "active"
+    },
+    {
+      "id": "gitee-personal",
+      "platform": "gitee",
+      "host": "gitee.com",
+      "displayName": "我的 Gitee",
+      "username": "example-user",
+      "authMethod": "oauth-authorization-code",
+      "scopes": ["user_info", "projects", "pull_requests", "issues"],
+      "credentialRef": "keychain://repoflow/gitee-personal/access_token",
+      "clientSecretRef": "keychain://repoflow/gitee-personal/client_secret",
+      "cacheNamespace": "gitee-personal",
+      "tokenExpiresAt": null,
+      "visibility": "public+private",
+      "status": "pending"
+    }
+  ],
+  "policy": {
+    "store": "os-keychain",
+    "neverPersistPlaintextToken": true,
+    "neverEmbedTokenInRemoteUrl": true,
+    "refreshSkewSeconds": 300,
+    "onInvalidGrant": "prompt-reauth",
+    "maxConcurrentAuthAttempts": 1,
+    "revokeOnLogout": true,
+    "enableSecretScanning": true
+  }
+}

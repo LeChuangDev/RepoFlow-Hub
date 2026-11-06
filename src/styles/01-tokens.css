@@ -1,0 +1,72 @@
+
+/* ============ Design DNA ============
+   调性：克制的专业工具感 + 一处视觉焦点
+   日间：Indigo 主色 / 冷白底；夜间：黑蓝（近黑底 + 电光蓝），不使用紫调
+   8pt 网格、12px 圆角、两层克制阴影、200ms 标准动效
+   --primary        用于文字、边框、焦点环（在底色上必须可读）
+   --primary-solid  用于实心填充（其上为白字，必须够深）
+   ==================================== */
+:root{
+  color-scheme:light;
+  --bg:#F5F6FA; --surface:#FFFFFF; --surface-2:#F0F2F9; --surface-3:#E8EBF4;
+  --outline:#E3E6EF; --outline-strong:#D1D6E5;
+  --text:#15162A; --text-2:#565D75; --text-3:#666E88;
+  --primary:#5B52E8; --primary-hover:#4A41D6; --primary-soft:#EDECFE;
+  --primary-solid:#5B52E8; --primary-solid-hover:#4A41D6;
+  --brand-a:#6C63FF; --brand-b:#4B43C4; --brand-glow:91,82,232;
+  --teal:#22897F; --teal-soft:#E2F3F1;
+  --amber:#B57512; --amber-soft:#FBF1DE;
+  --red:#D93A3F; --red-soft:#FCEBEC;
+  --green:#237A52; --green-soft:#E5F4EB;
+  --blue:#2C6BC4; --blue-soft:#E9F1FC;
+  --inverse-bg:#191A2C; --inverse-fg:#FFFFFF; --inverse-muted:rgba(255,255,255,.66);
+  --inverse-btn:rgba(255,255,255,.13); --inverse-btn-hover:rgba(255,255,255,.24);
+  --inverse-border:transparent;
+  --shadow-1:0 1px 2px rgba(21,22,42,.05), 0 4px 16px rgba(21,22,42,.06);
+  --shadow-2:0 4px 8px rgba(21,22,42,.07), 0 14px 36px rgba(21,22,42,.10);
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s8:32px; --s10:40px; --s12:48px;
+  --r-sm:8px; --r:12px; --r-lg:16px; --r-xl:22px;
+  --ease:cubic-bezier(.2,0,0,1);
+  --ease-spring:cubic-bezier(.34,1.56,.64,1);
+  --font-display:'Space Grotesk','Inter','Noto Sans SC',sans-serif;
+  --font-body:'Inter','Noto Sans SC',system-ui,sans-serif;
+}
+[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#04070E; --surface:#0A1120; --surface-2:#0F1929; --surface-3:#16243A;
+  --outline:#1B2940; --outline-strong:#2B3D59;
+  --text:#E9EFFA; --text-2:#A6B5CC; --text-3:#8494AD;
+  --primary:#6FA8FF; --primary-hover:#94C0FF; --primary-soft:#0E2342;
+  --primary-solid:#2563EB; --primary-solid-hover:#3B82F6;
+  --brand-a:#4F8DFF; --brand-b:#1D48B8; --brand-glow:79,141,255;
+  --teal:#43D3C2; --teal-soft:#0B2C2A;
+  --amber:#F0B45C; --amber-soft:#2C2313;
+  --red:#FF7078; --red-soft:#33161C;
+  --green:#57D68D; --green-soft:#0E2A1D;
+  --blue:#7FB0FF; --blue-soft:#0F2340;
+  --inverse-bg:#101C30; --inverse-fg:#EAF2FF; --inverse-muted:rgba(234,242,255,.66);
+  --inverse-btn:rgba(255,255,255,.07); --inverse-btn-hover:rgba(255,255,255,.14);
+  --inverse-border:#243854;
+  --shadow-1:0 1px 2px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.32);
+  --shadow-2:0 6px 12px rgba(0,0,0,.44), 0 18px 44px rgba(0,0,0,.5);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;transition:background .3s var(--ease),color .3s var(--ease)}
+[data-theme="dark"] body{
+  background:
+    radial-gradient(1100px 620px at 12% -14%, rgba(59,130,246,.13), transparent 62%),
+    radial-gradient(900px 520px at 102% -4%, rgba(34,211,238,.06), transparent 58%),
+    var(--bg);
+  background-attachment:fixed;
+}
+button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input{font:inherit}
+svg{display:block}
+::selection{background:var(--primary-soft);color:var(--primary)}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+
+/* 尊重系统「减少动效」偏好：关闭装饰性动画，保留状态切换 */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
+}

@@ -1,0 +1,73 @@
+{
+  "version": 1,
+  "description": "单文件原型的源码拼接顺序；CSS/JS 均在同一全局作用域内按序拼接",
+  "output": "prototype/index.html",
+  "shell": "src/shell.html",
+  "css": [
+    "src/styles/01-tokens.css",
+    "src/styles/02-shell.css",
+    "src/styles/03-components.css",
+    "src/styles/04-views.css",
+    "src/styles/05-performance.css",
+    "src/styles/06-marks.css",
+    "src/styles/07-gate.css",
+    "src/styles/08-about.css"
+  ],
+  "js": [
+    "src/data/00-edition.js",
+    "src/data/01-snapshot.js",
+    "src/data/02-constants.js",
+    "src/core/00-marks.js",
+    "src/core/01-state.js",
+    "src/core/02-render.js",
+    "src/core/03-commit.js",
+    "src/core/04-drawer.js",
+    "src/core/05-workbench.js",
+    "src/core/06-global.js",
+    "src/core/07-platforms.js",
+    "src/core/08-accounts.js",
+    "src/core/10-marks-editor.js",
+    "src/core/11-removal.js",
+    "src/core/12-auth-gate.js",
+    "src/core/13-about.js",
+    "src/core/09-interaction.js",
+    "src/selftest.js"
+  ],
+  "config": [
+    {
+      "id": "cfgCi",
+      "file": "templates/firmware-ci.yml"
+    },
+    {
+      "id": "cfgPrecommit",
+      "file": "templates/.pre-commit-config.yaml"
+    },
+    {
+      "id": "cfgHook",
+      "file": "templates/hooks/firmware-checks.sh"
+    }
+  ],
+  "targets": {
+    "dev": {
+      "output": "prototype/index.html",
+      "edition": "dev",
+      "sanitize": false,
+      "offline": false,
+      "note": "本机开发副本，含实测数据，自动载入中性演示账号"
+    },
+    "web": {
+      "output": "web/index.html",
+      "edition": "web",
+      "sanitize": true,
+      "offline": true,
+      "note": "公开网站版：默认未登录、中性示例数据、零外部资源请求；部署到自己的域名"
+    },
+    "desktop": {
+      "output": "desktop/app/index.html",
+      "edition": "desktop",
+      "sanitize": true,
+      "offline": true,
+      "note": "离线 Windows 版：无账号、无外部资源、不访问网站"
+    }
+  }
+}

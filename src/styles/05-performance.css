@@ -1,0 +1,11 @@
+/* ---------- v7 · 渲染性能 ---------- */
+.card{content-visibility:auto;contain-intrinsic-size:auto 208px}
+.load-more{grid-column:1/-1;display:flex;align-items:center;gap:var(--s3);padding:var(--s4);justify-content:center;border:1px dashed var(--outline-strong);border-radius:var(--r)}
+.budget-bar{height:10px;background:var(--surface-2);border-radius:6px;overflow:hidden;margin:var(--s3) 0}
+.budget-bar i{display:block;height:100%;background:var(--green);border-radius:6px;transition:width .4s var(--ease)}
+.budget-bar i.over{background:var(--red)}
+.perf-cmp td{font-size:11.5px}
+.perf-cmp .good{color:var(--green);font-family:var(--font-display);font-weight:700}
+.perf-cmp .bad{color:var(--red);font-family:var(--font-display);font-weight:700}
+@media(max-width:1180px){.content-grid{grid-template-columns:1fr}.grid-2{grid-template-columns:1fr}.kpi-row{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:840px){.app{grid-template-columns:64px 1fr}.brand-name,.brand-sub,.nav-label,.nav-item span:not(.nav-badge),.nav-badge,.account>div:not(.avatar),.theme-opt span{display:none}.nav-item{justify-content:center;padding:0}.nav-item.active::before{left:-16px}.sidebar{padding:var(--s5) var(--s2)}.account{justify-content:center;padding:var(--s2)}.theme-switch{grid-template-columns:1fr;padding:2px}.theme-opt{height:26px}.batch-bar{left:calc(64px + (100vw - 64px)/2)}.topbar{padding:0 var(--s4)}.scroll{padding:var(--s5) var(--s4) 100px}.kpi-row{grid-template-columns:repeat(2,1fr)}.crumb{display:none}.search{margin-left:0;width:100%}}

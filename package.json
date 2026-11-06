@@ -1,0 +1,21 @@
+{
+  "name": "repoflow-hub",
+  "version": "0.8.0",
+  "private": true,
+  "description": "面向独立全栈开发者的多仓库 Git 管理桌面工具 · 高保真交互原型",
+  "scripts": {
+    "build": "python scripts/build.py",
+    "build:dev": "python scripts/build.py --target=dev",
+    "build:web": "python scripts/build.py --target=web",
+    "build:desktop": "python scripts/build.py --target=desktop",
+    "check": "python scripts/build.py --check",
+    "verify": "python scripts/verify.py",
+    "test": "python scripts/verify.py --browser",
+    "bench": "python scripts/verify.py --bench",
+    "sanitize": "python templates/sanitize.py",
+    "release": "python scripts/build.py && python scripts/verify.py --browser && python templates/sanitize.py"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,0 +1,21 @@
+# 本地凭据与运行时状态（绝不入库）
+.env
+.env.*
+!.env.example
+*.token
+*.key
+
+# Python / Node 运行产物
+__pycache__/
+*.pyc
+node_modules/
+
+# 构建与验证的临时文件
+_*
+*.bak
+_dist/
+desktop/profile/
+.DS_Store
+
+# 说明：prototype/index.html 是含本机实测数据的工作副本，
+# 随仓库分发的是 prototype/index.public.html（由 scripts/sanitize.py 生成）。

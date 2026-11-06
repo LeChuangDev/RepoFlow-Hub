@@ -1,0 +1,57 @@
+# =============================================================================
+# RepoFlow Hub · 个人嵌入式仓库 pre-commit 模板
+# 放置位置：<仓库根>/.pre-commit-config.yaml
+# 启用方式：pip install pre-commit && pre-commit install
+# 本地依赖：clang-format、cppcheck、cmake、ninja、gcc-arm-none-eabi
+#
+# 本机实测依据（2026-11-06）：
+#   - 8 个 CMake 子工程各自带 .clang-format，且文件头明确写明
+#     Drivers/ 与 Middlewares/ 是第三方源码，禁止格式化 → 下面用 exclude 排除
+#   - 嘉立创资料仓库混入过 74.5 MB PDF → check-added-large-files 防止重演
+#   - 6 个仓库里只有 calcbridge 已有 CI 门禁，其余尚无提交前检查
+#   - 只有 Templates/Module/build-test 出现过 CTest 产物，因此测试钩子
+#     采用「检测到目标才执行」，没有目标时明确跳过，不伪造通过
+# =============================================================================
+
+minimum_pre_commit_version: '3.2.0'
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: ^(Drivers|Middlewares|.*/CMSIS|.*/Core/Startup)/
+      - id: end-of-file-fixer
+        exclude: ^(Drivers|Middlewares|.*/CMSIS|.*/Core/Startup)/
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+        args: ['--maxkb=2048']
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v19.1.7
+    hooks:
+      - id: clang-format
+        types_or: [c, c++]
+        exclude: ^(Drivers|Middlewares|.*/CMSIS|.*/Core/Startup)/.*\.(c|h|cpp|hpp)$
+        args: ['-style=file']
+
+  - repo: local
+    hooks:
+      - id: cppcheck
+        name: cppcheck 语法与静态检查
+        entry: cppcheck --enable=warning,performance,portability --error-exitcode=1 --quiet --inline-suppr
+        language: system
+        types: [c]
+        exclude: ^(Drivers|Middlewares|.*/CMSIS)/
+
+      - id: firmware-checks
+        name: CMake 编译 + 单元测试（检测到目标才执行）
+        entry: bash .repoflow/hooks/firmware-checks.sh
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-commit]

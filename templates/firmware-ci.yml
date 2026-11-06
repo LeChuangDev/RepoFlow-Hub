@@ -1,0 +1,157 @@
+# =============================================================================
+# RepoFlow Hub · 固件 CI 模板
+# 适用仓库：Templates（8 个 CMake 工程 + 1 个 ESP-IDF 工程）
+# 放置位置：<仓库根>/.github/workflows/firmware-ci.yml
+#
+# 不适用：32_Demo。该仓库 4 个子工程均为 Keil MDK-ARM (.uvprojx) / EIDE，
+#   armcc / armclang 为商业授权且仅 Windows，免费 Linux runner 无法编译；
+#   同时 .eide/ 被 .gitignore 忽略，工程配置不入库，CI 无法还原工程。
+#   该仓库需先按 Templates 的 CMake 模板迁移，再接入本工作流。
+#
+# 免费额度：公开仓库 Actions 分钟数不限；私有仓库 Free 计划 2000 分钟/月。
+# 依赖证据（本机只读扫描，2026-11-06）：
+#   - 8 个子工程均有 CMakePresets.json（debug / release preset，Ninja）
+#   - 8 个子工程均有 cmake/arm-none-eabi.cmake、Core/Linker、.clang-format
+#   - CMakeLists.txt 的 POST_BUILD 段用 CMAKE_OBJCOPY 生成 .hex / .bin
+#   - 现有 calcbridge/.github/workflows/ci.yml 已采用最小权限 + 锁文件门禁
+# =============================================================================
+
+name: 固件 CI
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: firmware-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: 编译 ${{ matrix.project }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - AT_F435_Demo
+          - CW_F030_Demo
+          - GD_E230_Demo
+          - GD_F407_Demo
+          - ST_F103_Demo
+          - ST_F407_Demo
+          - ST_G431_Demo
+          - ST_H743_Demo
+    steps:
+      - name: 检出
+        uses: actions/checkout@v4
+
+      - name: 安装交叉工具链
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            gcc-arm-none-eabi binutils-arm-none-eabi ninja-build cmake
+
+      - name: 配置（release preset）
+        working-directory: ${{ matrix.project }}
+        run: cmake --preset release
+
+      - name: 编译
+        working-directory: ${{ matrix.project }}
+        run: cmake --build --preset release
+
+      - name: 固件体积
+        working-directory: ${{ matrix.project }}
+        run: |
+          find build -name '*.elf' -print0 | xargs -0 -r arm-none-eabi-size
+
+      - name: 收集产物
+        run: |
+          mkdir -p "dist/${{ matrix.project }}"
+          find "${{ matrix.project }}/build" -maxdepth 3 -type f \
+            \( -name '*.elf' -o -name '*.hex' -o -name '*.bin' \) \
+            -exec cp {} "dist/${{ matrix.project }}/" \;
+
+      - name: 上传固件
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-${{ matrix.project }}
+          path: dist/${{ matrix.project }}/
+          if-no-files-found: error
+
+  static-check:
+    name: 静态检查与大文件门禁
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: 检出
+        uses: actions/checkout@v4
+
+      - name: 阻断应走 LFS 的大文件再次入库
+        run: |
+          find . -path ./.git -prune -o -type f -size +2M -print | tee big.txt
+          if grep -qE '\.(pdf|zip|7z|pack)$' big.txt; then
+            echo "检测到应走 Git LFS 的大文件，请先执行 git lfs track"
+            exit 1
+          fi
+
+      - name: 校验 CMake 工程完整性
+        run: |
+          shopt -s nullglob
+          found=0
+          for d in */CMakePresets.json; do
+            found=1
+            p="${d%/*}"
+            test -f "$p/cmake/arm-none-eabi.cmake" || { echo "缺少工具链: $p"; exit 1; }
+            test -f "$p/.clang-format" || { echo "缺少格式配置: $p"; exit 1; }
+          done
+          echo "已校验 CMake 工程数: $found"
+
+  release:
+    name: 生成 Release 包
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build, static-check]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - name: 检出（完整历史，用于生成变更日志）
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 下载全部固件产物
+        uses: actions/download-artifact@v4
+        with:
+          path: release/firmware
+          merge-multiple: false
+
+      - name: 生成校验和与变更日志
+        run: |
+          cd release
+          find firmware -type f \( -name '*.elf' -o -name '*.hex' -o -name '*.bin' \) \
+            -exec sha256sum {} \; > SHA256SUMS.txt
+          prev=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || true)
+          if [ -n "$prev" ]; then
+            git log "$prev"..HEAD --pretty=format:'- %h %s' > CHANGELOG.md
+          else
+            git log -20 --pretty=format:'- %h %s' > CHANGELOG.md
+          fi
+          zip -r "firmware-${GITHUB_REF_NAME}.zip" firmware SHA256SUMS.txt CHANGELOG.md
+
+      - name: 发布 Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release/firmware-*.zip
+            release/SHA256SUMS.txt
+            release/CHANGELOG.md
+          generate_release_notes: true
