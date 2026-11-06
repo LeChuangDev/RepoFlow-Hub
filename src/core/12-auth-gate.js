@@ -18,7 +18,7 @@ function enterLocalMode(){
     scopes:['本地只读'],color:'#2E9E96',short:'LO',exp:'不适用',store:'不保存凭据'
   });
   S.activeAccount=id;S.authed=true;S.authMode='local';
-  hideGate();renderAccountCards();renderSideAccount();renderAll();
+  hideGate();renderAccountCards();renderSideAccount();renderAll();renderDemoState();renderLiveNote();
   const nav=document.querySelector('[data-view="accounts"] span');
   if(nav)nav.textContent='关于离线版';
 }
@@ -30,8 +30,9 @@ function logoutAll(){
   if(EDITION==='web')showGate();
 }
 function bootstrapEdition(){
-  const noGate=location.search.includes('selftest')||location.search.includes('gate=off');
+  const noGate=location.search.includes('selftest')||location.search.includes('gate=off')||location.search.includes('demo=1');
   if(EDITION==='desktop'){enterLocalMode();return;}
+  if(EDITION==='web'&&location.search.includes('demo=1')){enterDemoMode();return;}
   if(EDITION==='web'&&!noGate&&!S.authed){showGate();return;}
   if(EDITION==='dev'&&!noGate){
     S.accounts=ACCOUNTS.map(a=>Object.assign({},a,{state:'active',user:'已登录账号',store:'keychain://repoflow/'+a.id}));

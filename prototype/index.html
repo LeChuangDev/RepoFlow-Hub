@@ -3639,7 +3639,7 @@ function enterLocalMode(){
     scopes:['本地只读'],color:'#2E9E96',short:'LO',exp:'不适用',store:'不保存凭据'
   });
   S.activeAccount=id;S.authed=true;S.authMode='local';
-  hideGate();renderAccountCards();renderSideAccount();renderAll();
+  hideGate();renderAccountCards();renderSideAccount();renderAll();renderDemoState();renderLiveNote();
   const nav=document.querySelector('[data-view="accounts"] span');
   if(nav)nav.textContent='关于离线版';
 }
@@ -3651,8 +3651,9 @@ function logoutAll(){
   if(EDITION==='web')showGate();
 }
 function bootstrapEdition(){
-  const noGate=location.search.includes('selftest')||location.search.includes('gate=off');
+  const noGate=location.search.includes('selftest')||location.search.includes('gate=off')||location.search.includes('demo=1');
   if(EDITION==='desktop'){enterLocalMode();return;}
+  if(EDITION==='web'&&location.search.includes('demo=1')){enterDemoMode();return;}
   if(EDITION==='web'&&!noGate&&!S.authed){showGate();return;}
   if(EDITION==='dev'&&!noGate){
     S.accounts=ACCOUNTS.map(a=>Object.assign({},a,{state:'active',user:'已登录账号',store:'keychain://repoflow/'+a.id}));
@@ -4193,6 +4194,8 @@ function renderDemoState(){
     ? '实时读取你账号下的仓库列表（只读）。提交历史、CI、通知与推送记录仍为内置示例，不会执行任何 Git 写操作。'
     : (EDITION==='desktop'
       ? '离线版支持只读扫描本地文件夹：点右上角「扫描本地文件夹」选择项目目录或父目录。当前展示的是中性演示数据。'
+      : S.demo
+      ? '演示模式：以下为中性示例数据，不代表任何真实账号或本机仓库。可直接体验 14 个视图与批量操作交互。'
       : '一次看清所有仓库的本地状态、远端状态与体积风险。数据来自本机 <code style="font-size:11.5px">C:\\Users\\zhang\\Desktop\\Project</code> 只读扫描。');
   $('#snapshotText').textContent=S.local
     ? '本地扫描 · '+REPOS.length+' 个仓库 · 只读'

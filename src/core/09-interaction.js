@@ -19,6 +19,8 @@ function renderDemoState(){
     ? '实时读取你账号下的仓库列表（只读）。提交历史、CI、通知与推送记录仍为内置示例，不会执行任何 Git 写操作。'
     : (EDITION==='desktop'
       ? '离线版支持只读扫描本地文件夹：点右上角「扫描本地文件夹」选择项目目录或父目录。当前展示的是中性演示数据。'
+      : S.demo
+      ? '演示模式：以下为中性示例数据，不代表任何真实账号或本机仓库。可直接体验 14 个视图与批量操作交互。'
       : '一次看清所有仓库的本地状态、远端状态与体积风险。数据来自本机 <code style="font-size:11.5px">C:\\Users\\zhang\\Desktop\\Project</code> 只读扫描。');
   $('#snapshotText').textContent=S.local
     ? '本地扫描 · '+REPOS.length+' 个仓库 · 只读'
