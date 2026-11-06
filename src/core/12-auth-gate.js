@@ -25,7 +25,7 @@ function enterLocalMode(){
 function logoutAll(){
   githubLogout();
   S.accounts=[];S.activeAccount='';S.authed=false;S.authMode='';
-  renderAccountCards();renderSideAccount();renderAll();renderDemoState();
+  renderAccountCards();renderSideAccount();renderAll();renderDemoState();renderLiveNote();
   toast('已退出登录，令牌与账号信息已从本页清除。','warn');
   if(EDITION==='web')showGate();
 }

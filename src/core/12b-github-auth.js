@@ -60,6 +60,18 @@ function ghRepoToLocal(r){
   };
 }
 
+/* 检索数据源：演示模式用内置索引；真实登录后直接用当前仓库列表，
+   避免搜索仍停留在示例数据上。 */
+function searchSource(){
+  if(!S.live)return SEARCH_INDEX;
+  const user=(S.accounts[0]&&S.accounts[0].user)||'GitHub';
+  return REPOS.map(r=>({repo:r.name,sha:'—',msg:r.msg,branch:r.branch,author:user,date:r.date,real:true,github:true}));
+}
+
+function renderLiveNote(){
+  const el=$('#liveNote');if(el)el.style.display=S.live?'flex':'none';
+}
+
 function applyGitHubSession(user,repos){
   S.demo=false;S.live=true;
   const acct={id:GH_ACCOUNT_ID,platform:'github',host:'github.com',user:user.login||'unknown',
@@ -81,7 +93,7 @@ async function githubLogin(rawToken){
   const repos=(Array.isArray(list)?list:[]).map(ghRepoToLocal);
   GH_TOKEN=token;                       // 校验通过后才保留
   applyGitHubSession(user,repos);
-  hideGate();showPatPanel(false);renderAccountCards();renderSideAccount();renderAll();renderDemoState();rerenderRendered();
+  hideGate();showPatPanel(false);renderAccountCards();renderSideAccount();renderAll();renderDemoState();renderLiveNote();rerenderRendered();
   toast('已连接 GitHub <b>@'+esc(user.login||'')+'</b>，读取到 '+repos.length+' 个仓库；令牌只保存在本页内存。','success');
   return {user,repos};
 }
@@ -100,7 +112,7 @@ function enterDemoMode(){
   S.accounts=[acct];
   S.activeAccount='demo-mode';S.authed=true;S.authMode='demo';
   ACCOUNT_REPOS['demo-mode']=REPOS.map(r=>r.id);
-  hideGate();renderAccountCards();renderSideAccount();renderAll();renderDemoState();rerenderRendered();
+  hideGate();renderAccountCards();renderSideAccount();renderAll();renderDemoState();renderLiveNote();rerenderRendered();
   toast('已进入演示模式：以下为中性示例数据，不是你的账号，也不会读取任何远端仓库。','warn');
 }
 

@@ -1,7 +1,7 @@
 /* ================= v4 · 全局检索 ================= */
 function searchMatch(q,repo,rng){
   const term=q.trim().toLowerCase();
-  return SEARCH_INDEX.filter(x=>{
+  return searchSource().filter(x=>{
     if(repo!=='all'&&x.repo!==repo)return false;
     if(rng==='week'&&x.date<'2026-11-03')return false;
     if(rng==='month'&&x.date<'2026-11-01')return false;
@@ -10,17 +10,32 @@ function searchMatch(q,repo,rng){
     return (x.msg+' '+x.sha+' '+x.repo+' '+x.author).toLowerCase().includes(term);
   });
 }
+function syncSearchRepoOptions(){
+  const sel=$('#searchRepo');if(!sel)return;
+  const list=[...new Set(searchSource().map(x=>x.repo))];
+  const sig=list.join('\u0001');
+  if(sel.dataset.sig===sig)return;
+  const cur=sel.value;
+  sel.dataset.sig=sig;
+  sel.innerHTML='<option value="all">全部仓库</option>'+list.map(r=>`<option value="${esc(r)}">${esc(r)}</option>`).join('');
+  sel.value=list.includes(cur)?cur:'all';
+  S.searchRepo=sel.value;
+}
 function renderSearch(){
+  syncSearchRepoOptions();
+  const src=searchSource();
   const q=$('#searchQ').value,list=searchMatch(q,S.searchRepo,S.searchRange);
-  $('#idxCount').textContent=SEARCH_INDEX.length;
-  $('#searchMeta').textContent='命中 '+list.length+' 条 · 索引 '+SEARCH_INDEX.length+' 条（实测 '+LIVE.length+' / 演示 '+COMMITS.length+'）';
-  $('#searchResults').innerHTML=list.length?list.map(x=>`<div class="result-row" data-sha="${x.sha}" data-repo="${esc(x.repo)}">
-    ${projectMarkByName(x.repo,'sm')}<span class="hist-sha">${x.sha}</span>
+  $('#idxCount').textContent=src.length;
+  $('#searchMeta').textContent=S.live
+    ? '命中 '+list.length+' 条 · 索引 '+src.length+' 条（GitHub 实时仓库）'
+    : '命中 '+list.length+' 条 · 索引 '+src.length+' 条（实测 '+LIVE.length+' / 演示 '+COMMITS.length+'）';
+  $('#searchResults').innerHTML=list.length?list.map(x=>`<div class="result-row" data-sha="${esc(x.sha)}" data-repo="${esc(x.repo)}">
+    ${projectMarkByName(x.repo,'sm')}<span class="hist-sha">${esc(x.sha)}</span>
     <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(x.msg)}</span>
-    <span class="tag ${x.real?'t-teal':'t-grey'}">${x.real?'实测':'演示'}</span>
+    <span class="tag ${x.github?'t-blue':x.real?'t-teal':'t-grey'}">${x.github?'实时':x.real?'实测':'演示'}</span>
     <span class="tag t-blue">${esc(x.repo)}</span>
     <span style="font-size:10.5px;color:var(--text-3);white-space:nowrap">${x.date}</span></div>`).join('')
-    :'<div class="empty">没有匹配的提交。清空条件或切换时间范围再试。</div>';
+    :('<div class="empty">'+(S.live?'没有匹配的仓库。换个关键词，或把仓库筛选切回「全部仓库」。':'没有匹配的提交。清空条件或切换时间范围再试。')+'</div>');
   $$('#searchResults .result-row').forEach(el=>el.onclick=()=>{
     const r=REPOS.find(x=>x.name===el.dataset.repo||x.id===el.dataset.repo);
     if(r)openRepo(r.id);else toast('该提交属于演示索引，没有对应的本地仓库详情。','warn');
@@ -30,7 +45,7 @@ function renderSearchDrop(){
   const q=$('#searchInput').value.trim().toLowerCase(),box=$('#searchDrop');
   if(!q){box.classList.remove('show');S.sdItems=[];S.sdSel=-1;return;}
   const repos=REPOS.filter(r=>(r.name+' '+r.remote+' '+r.msg).toLowerCase().includes(q)).slice(0,3);
-  const commits=SEARCH_INDEX.filter(x=>(x.msg+' '+x.sha+' '+x.repo).toLowerCase().includes(q)).slice(0,4);
+  const commits=searchSource().filter(x=>(x.msg+' '+x.sha+' '+x.repo).toLowerCase().includes(q)).slice(0,4);
   /* 下拉项顺序与 S.sdItems 一一对应，键盘上下键与鼠标共用同一份索引 */
   S.sdItems=repos.map(r=>({kind:'repo',id:r.id})).concat(commits.map(x=>({kind:'commit',msg:x.msg})));
   if(S.sdSel>=S.sdItems.length)S.sdSel=S.sdItems.length-1;

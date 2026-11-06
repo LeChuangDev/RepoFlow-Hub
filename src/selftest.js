@@ -387,6 +387,14 @@ function runSelfTest(){
   t('令牌格式校验',ghTokenFormatOk('ghp_'+'a'.repeat(36))&&ghTokenFormatOk('github_pat_'+'b'.repeat(30))&&!ghTokenFormatOk('short')&&!ghTokenFormatOk('ghp_with space'),'ok');
   const sampleRepo=ghRepoToLocal({id:7,name:'demo-app',full_name:'demoOrg/demo-app',default_branch:'main',size:2048,language:'JavaScript',description:'示例',pushed_at:'2026-11-06T00:00:00Z'});
   t('API 仓库映射到仓库卡片',sampleRepo.id==='gh-7'&&sampleRepo.remote==='demoOrg/demo-app'&&sampleRepo.sizeMB===2&&sampleRepo.kind==='web'&&sampleRepo.branch==='main',sampleRepo.id);
+  const liveState=S.live;S.live=true;
+  t('真实模式检索源改用仓库列表',searchSource().length===REPOS.length&&searchSource().length>0&&searchSource()[0].github===true,searchSource().length);
+  t('真实模式检索能命中仓库名',searchMatch(REPOS[0].name,'all','all').length>=1);
+  S.live=true;renderLiveNote();
+  t('真实模式显示只读提示条',$('#liveNote').style.display==='flex');
+  S.live=false;renderLiveNote();
+  t('非真实模式隐藏只读提示条',$('#liveNote').style.display==='none');
+  S.live=liveState;renderLiveNote();
   showPatPanel(true);
   t('令牌面板可展开',$('#gatePat').style.display==='block');
   showPatPanel(false);

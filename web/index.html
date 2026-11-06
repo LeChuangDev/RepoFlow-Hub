@@ -827,6 +827,10 @@ textarea.inp{resize:vertical;min-height:78px;line-height:1.55}
     </header>
 
     <div class="scroll">
+      <div class="notice" id="liveNote" style="display:none;margin:18px 24px 0">
+        <b>已连接 GitHub（只读）</b>
+        <span>仓库列表为实时数据；提交历史、CI、通知、推送记录与平台同步仍为内置示例，不会改动任何仓库。</span>
+      </div>
       <!-- ---------- 驾驶舱 ---------- -->
       <section class="view active" id="view-dashboard">
         <div class="page-head">
@@ -2570,12 +2574,12 @@ function openRepo(id){
       <dt>分组</dt><dd>${esc(r.group)}</dd>
       <dt>当前分支</dt><dd>${r.branch}</dd>
       <dt>远端</dt><dd>${esc(r.remote)}</dd>
-      <dt>分支总数</dt><dd>${r.branches} 个（含远端）</dd>
-      <dt>受控文件</dt><dd>${r.files} 个</dd>
+      <dt>分支总数</dt><dd>${r.live?'—（GitHub API 未提供）':r.branches+' 个（含远端）'}</dd>
+      <dt>受控文件</dt><dd>${r.live?'—（GitHub API 未提供）':r.files+' 个'}</dd>
       <dt>.git 体积</dt><dd style="color:${r.sizeMB>=20?'var(--red)':'inherit'}">${r.size}</dd>
       <dt>LFS 追踪</dt><dd>${r.attrs?'有 .gitattributes，仅换行规则':'未配置'}</dd>
     </dl>
-    <div class="drawer-sec">工作区状态（${S.demo?'演示态':'实测快照'}）</div>
+    <div class="drawer-sec">工作区状态（${S.live?'GitHub 只读数据':S.demo?'演示态':'实测快照'}）</div>
     <div class="metric-list" style="margin-top:0">
       <div class="metric"><span>未提交变更</span><b>${d}</b></div>
       <div class="metric"><span>未推送提交</span><b>${a}</b></div>
@@ -2833,7 +2837,7 @@ function renderGaps(){
 /* ================= v4 · 全局检索 ================= */
 function searchMatch(q,repo,rng){
   const term=q.trim().toLowerCase();
-  return SEARCH_INDEX.filter(x=>{
+  return searchSource().filter(x=>{
     if(repo!=='all'&&x.repo!==repo)return false;
     if(rng==='week'&&x.date<'2026-11-03')return false;
     if(rng==='month'&&x.date<'2026-11-01')return false;
@@ -2842,17 +2846,32 @@ function searchMatch(q,repo,rng){
     return (x.msg+' '+x.sha+' '+x.repo+' '+x.author).toLowerCase().includes(term);
   });
 }
+function syncSearchRepoOptions(){
+  const sel=$('#searchRepo');if(!sel)return;
+  const list=[...new Set(searchSource().map(x=>x.repo))];
+  const sig=list.join('\u0001');
+  if(sel.dataset.sig===sig)return;
+  const cur=sel.value;
+  sel.dataset.sig=sig;
+  sel.innerHTML='<option value="all">全部仓库</option>'+list.map(r=>`<option value="${esc(r)}">${esc(r)}</option>`).join('');
+  sel.value=list.includes(cur)?cur:'all';
+  S.searchRepo=sel.value;
+}
 function renderSearch(){
+  syncSearchRepoOptions();
+  const src=searchSource();
   const q=$('#searchQ').value,list=searchMatch(q,S.searchRepo,S.searchRange);
-  $('#idxCount').textContent=SEARCH_INDEX.length;
-  $('#searchMeta').textContent='命中 '+list.length+' 条 · 索引 '+SEARCH_INDEX.length+' 条（实测 '+LIVE.length+' / 演示 '+COMMITS.length+'）';
-  $('#searchResults').innerHTML=list.length?list.map(x=>`<div class="result-row" data-sha="${x.sha}" data-repo="${esc(x.repo)}">
-    ${projectMarkByName(x.repo,'sm')}<span class="hist-sha">${x.sha}</span>
+  $('#idxCount').textContent=src.length;
+  $('#searchMeta').textContent=S.live
+    ? '命中 '+list.length+' 条 · 索引 '+src.length+' 条（GitHub 实时仓库）'
+    : '命中 '+list.length+' 条 · 索引 '+src.length+' 条（实测 '+LIVE.length+' / 演示 '+COMMITS.length+'）';
+  $('#searchResults').innerHTML=list.length?list.map(x=>`<div class="result-row" data-sha="${esc(x.sha)}" data-repo="${esc(x.repo)}">
+    ${projectMarkByName(x.repo,'sm')}<span class="hist-sha">${esc(x.sha)}</span>
     <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(x.msg)}</span>
-    <span class="tag ${x.real?'t-teal':'t-grey'}">${x.real?'实测':'演示'}</span>
+    <span class="tag ${x.github?'t-blue':x.real?'t-teal':'t-grey'}">${x.github?'实时':x.real?'实测':'演示'}</span>
     <span class="tag t-blue">${esc(x.repo)}</span>
     <span style="font-size:10.5px;color:var(--text-3);white-space:nowrap">${x.date}</span></div>`).join('')
-    :'<div class="empty">没有匹配的提交。清空条件或切换时间范围再试。</div>';
+    :('<div class="empty">'+(S.live?'没有匹配的仓库。换个关键词，或把仓库筛选切回「全部仓库」。':'没有匹配的提交。清空条件或切换时间范围再试。')+'</div>');
   $$('#searchResults .result-row').forEach(el=>el.onclick=()=>{
     const r=REPOS.find(x=>x.name===el.dataset.repo||x.id===el.dataset.repo);
     if(r)openRepo(r.id);else toast('该提交属于演示索引，没有对应的本地仓库详情。','warn');
@@ -2862,7 +2881,7 @@ function renderSearchDrop(){
   const q=$('#searchInput').value.trim().toLowerCase(),box=$('#searchDrop');
   if(!q){box.classList.remove('show');S.sdItems=[];S.sdSel=-1;return;}
   const repos=REPOS.filter(r=>(r.name+' '+r.remote+' '+r.msg).toLowerCase().includes(q)).slice(0,3);
-  const commits=SEARCH_INDEX.filter(x=>(x.msg+' '+x.sha+' '+x.repo).toLowerCase().includes(q)).slice(0,4);
+  const commits=searchSource().filter(x=>(x.msg+' '+x.sha+' '+x.repo).toLowerCase().includes(q)).slice(0,4);
   /* 下拉项顺序与 S.sdItems 一一对应，键盘上下键与鼠标共用同一份索引 */
   S.sdItems=repos.map(r=>({kind:'repo',id:r.id})).concat(commits.map(x=>({kind:'commit',msg:x.msg})));
   if(S.sdSel>=S.sdItems.length)S.sdSel=S.sdItems.length-1;
@@ -3618,7 +3637,7 @@ function enterLocalMode(){
 function logoutAll(){
   githubLogout();
   S.accounts=[];S.activeAccount='';S.authed=false;S.authMode='';
-  renderAccountCards();renderSideAccount();renderAll();renderDemoState();
+  renderAccountCards();renderSideAccount();renderAll();renderDemoState();renderLiveNote();
   toast('已退出登录，令牌与账号信息已从本页清除。','warn');
   if(EDITION==='web')showGate();
 }
@@ -3694,6 +3713,18 @@ function ghRepoToLocal(r){
   };
 }
 
+/* 检索数据源：演示模式用内置索引；真实登录后直接用当前仓库列表，
+   避免搜索仍停留在示例数据上。 */
+function searchSource(){
+  if(!S.live)return SEARCH_INDEX;
+  const user=(S.accounts[0]&&S.accounts[0].user)||'GitHub';
+  return REPOS.map(r=>({repo:r.name,sha:'—',msg:r.msg,branch:r.branch,author:user,date:r.date,real:true,github:true}));
+}
+
+function renderLiveNote(){
+  const el=$('#liveNote');if(el)el.style.display=S.live?'flex':'none';
+}
+
 function applyGitHubSession(user,repos){
   S.demo=false;S.live=true;
   const acct={id:GH_ACCOUNT_ID,platform:'github',host:'github.com',user:user.login||'unknown',
@@ -3715,7 +3746,7 @@ async function githubLogin(rawToken){
   const repos=(Array.isArray(list)?list:[]).map(ghRepoToLocal);
   GH_TOKEN=token;                       // 校验通过后才保留
   applyGitHubSession(user,repos);
-  hideGate();showPatPanel(false);renderAccountCards();renderSideAccount();renderAll();renderDemoState();rerenderRendered();
+  hideGate();showPatPanel(false);renderAccountCards();renderSideAccount();renderAll();renderDemoState();renderLiveNote();rerenderRendered();
   toast('已连接 GitHub <b>@'+esc(user.login||'')+'</b>，读取到 '+repos.length+' 个仓库；令牌只保存在本页内存。','success');
   return {user,repos};
 }
@@ -3734,7 +3765,7 @@ function enterDemoMode(){
   S.accounts=[acct];
   S.activeAccount='demo-mode';S.authed=true;S.authMode='demo';
   ACCOUNT_REPOS['demo-mode']=REPOS.map(r=>r.id);
-  hideGate();renderAccountCards();renderSideAccount();renderAll();renderDemoState();rerenderRendered();
+  hideGate();renderAccountCards();renderSideAccount();renderAll();renderDemoState();renderLiveNote();rerenderRendered();
   toast('已进入演示模式：以下为中性示例数据，不是你的账号，也不会读取任何远端仓库。','warn');
 }
 
@@ -4025,6 +4056,7 @@ function toast(msg,kind){
 readHash();
 renderTimelineInit();
 $('#searchRepo').innerHTML='<option value="all">全部仓库</option>'+[...new Set(SEARCH_INDEX.map(x=>x.repo))].map(r=>`<option value="${esc(r)}">${esc(r)}</option>`).join('');
+$('#searchRepo').dataset.sig=[...new Set(SEARCH_INDEX.map(x=>x.repo))].join('\u0001');
 applyLive();
 renderHelp();renderBell();renderSideAccount();bindRepoGrid();
 ensureView(S.view);setView(S.view);
@@ -4433,6 +4465,14 @@ function runSelfTest(){
   t('令牌格式校验',ghTokenFormatOk('ghp_'+'a'.repeat(36))&&ghTokenFormatOk('github_pat_'+'b'.repeat(30))&&!ghTokenFormatOk('short')&&!ghTokenFormatOk('ghp_with space'),'ok');
   const sampleRepo=ghRepoToLocal({id:7,name:'demo-app',full_name:'demoOrg/demo-app',default_branch:'main',size:2048,language:'JavaScript',description:'示例',pushed_at:'2026-11-06T00:00:00Z'});
   t('API 仓库映射到仓库卡片',sampleRepo.id==='gh-7'&&sampleRepo.remote==='demoOrg/demo-app'&&sampleRepo.sizeMB===2&&sampleRepo.kind==='web'&&sampleRepo.branch==='main',sampleRepo.id);
+  const liveState=S.live;S.live=true;
+  t('真实模式检索源改用仓库列表',searchSource().length===REPOS.length&&searchSource().length>0&&searchSource()[0].github===true,searchSource().length);
+  t('真实模式检索能命中仓库名',searchMatch(REPOS[0].name,'all','all').length>=1);
+  S.live=true;renderLiveNote();
+  t('真实模式显示只读提示条',$('#liveNote').style.display==='flex');
+  S.live=false;renderLiveNote();
+  t('非真实模式隐藏只读提示条',$('#liveNote').style.display==='none');
+  S.live=liveState;renderLiveNote();
   showPatPanel(true);
   t('令牌面板可展开',$('#gatePat').style.display==='block');
   showPatPanel(false);

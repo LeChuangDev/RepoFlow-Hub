@@ -27,12 +27,12 @@ function openRepo(id){
       <dt>分组</dt><dd>${esc(r.group)}</dd>
       <dt>当前分支</dt><dd>${r.branch}</dd>
       <dt>远端</dt><dd>${esc(r.remote)}</dd>
-      <dt>分支总数</dt><dd>${r.branches} 个（含远端）</dd>
-      <dt>受控文件</dt><dd>${r.files} 个</dd>
+      <dt>分支总数</dt><dd>${r.live?'—（GitHub API 未提供）':r.branches+' 个（含远端）'}</dd>
+      <dt>受控文件</dt><dd>${r.live?'—（GitHub API 未提供）':r.files+' 个'}</dd>
       <dt>.git 体积</dt><dd style="color:${r.sizeMB>=20?'var(--red)':'inherit'}">${r.size}</dd>
       <dt>LFS 追踪</dt><dd>${r.attrs?'有 .gitattributes，仅换行规则':'未配置'}</dd>
     </dl>
-    <div class="drawer-sec">工作区状态（${S.demo?'演示态':'实测快照'}）</div>
+    <div class="drawer-sec">工作区状态（${S.live?'GitHub 只读数据':S.demo?'演示态':'实测快照'}）</div>
     <div class="metric-list" style="margin-top:0">
       <div class="metric"><span>未提交变更</span><b>${d}</b></div>
       <div class="metric"><span>未推送提交</span><b>${a}</b></div>

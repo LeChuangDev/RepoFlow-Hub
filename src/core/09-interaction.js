@@ -173,6 +173,7 @@ function toast(msg,kind){
 readHash();
 renderTimelineInit();
 $('#searchRepo').innerHTML='<option value="all">全部仓库</option>'+[...new Set(SEARCH_INDEX.map(x=>x.repo))].map(r=>`<option value="${esc(r)}">${esc(r)}</option>`).join('');
+$('#searchRepo').dataset.sig=[...new Set(SEARCH_INDEX.map(x=>x.repo))].join('\u0001');
 applyLive();
 renderHelp();renderBell();renderSideAccount();bindRepoGrid();
 ensureView(S.view);setView(S.view);
