@@ -382,7 +382,7 @@ function runSelfTest(){
   /* ---- v9：登录门 ---- */
   t('开发副本默认不显示登录门',getComputedStyle($('#loginGate')).display==='none');
   showGate();
-  t('登录门列出 3 种进入方式',$('#loginGate').style.display!=='none'&&$$('#loginGate [data-login]').length===3);
+  t('登录门列出 2 种连接方式',$('#loginGate').style.display!=='none'&&$$('#loginGate [data-login]').length===2&&$$('#loginGate [data-login="demo"]').length===0);
   t('真实登录入口存在',typeof githubLogin==='function'&&typeof ghRepoToLocal==='function'&&typeof submitPat==='function');
   t('令牌格式校验',ghTokenFormatOk('ghp_'+'a'.repeat(36))&&ghTokenFormatOk('github_pat_'+'b'.repeat(30))&&!ghTokenFormatOk('short')&&!ghTokenFormatOk('ghp_with space'),'ok');
   const sampleRepo=ghRepoToLocal({id:7,name:'demo-app',full_name:'demoOrg/demo-app',default_branch:'main',size:2048,language:'JavaScript',description:'示例',pushed_at:'2026-11-06T00:00:00Z'});

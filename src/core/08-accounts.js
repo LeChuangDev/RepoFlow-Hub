@@ -15,7 +15,7 @@ function renderAccountCards(){
     ?'<div class="notice" style="margin-bottom:var(--s4)"><b>离线 Windows 版：</b>本版本不连接网站、不需要任何账号，所有仓库信息来自本机文件。账号与授权页仅用于说明，登录入口已停用。</div>':'';
   if(!S.accounts.length){
     $('#accountCards').innerHTML=offlineNote+'<div class="empty">当前没有关联任何账号。登录后才会读取仓库列表。'
-      +(EDITION==='desktop'?'':'<div class="action-row" style="justify-content:center;margin-top:var(--s4)"><button class="btn btn-primary" data-login="github">连接 GitHub</button><button class="btn btn-ghost" data-login="gitee">连接 Gitee</button><button class="btn btn-ghost" data-login="demo">演示数据</button></div>')
+      +(EDITION==='desktop'?'':'<div class="action-row" style="justify-content:center;margin-top:var(--s4)"><button class="btn btn-primary" data-login="github">连接 GitHub</button><button class="btn btn-ghost" data-login="gitee">连接 Gitee</button></div>')
       +'</div>';
     $('#acctSummary').textContent='0 个账号 · 0 个已授权';
     renderSideAccount();

@@ -721,7 +721,6 @@ textarea.inp{resize:vertical;min-height:78px;line-height:1.55}
       </div>
       <div class="gate-status" id="gatePatStatus"></div>
     </div>
-    <button class="gate-btn ghost" data-login="demo"><span class="gate-dot">DM</span>浏览演示数据（中性示例，不代表真实账号）</button>
     <button class="gate-btn ghost" data-login="gitee"><span class="gate-dot">GE</span>使用 Gitee 私人令牌连接</button>
     <div class="gate-foot"><span id="gateEdition"></span> · 推送 / 删除等写操作仍为原型模拟，不会改动任何仓库</div>
   </div>
@@ -3241,7 +3240,7 @@ function renderAccountCards(){
     ?'<div class="notice" style="margin-bottom:var(--s4)"><b>离线 Windows 版：</b>本版本不连接网站、不需要任何账号，所有仓库信息来自本机文件。账号与授权页仅用于说明，登录入口已停用。</div>':'';
   if(!S.accounts.length){
     $('#accountCards').innerHTML=offlineNote+'<div class="empty">当前没有关联任何账号。登录后才会读取仓库列表。'
-      +(EDITION==='desktop'?'':'<div class="action-row" style="justify-content:center;margin-top:var(--s4)"><button class="btn btn-primary" data-login="github">连接 GitHub</button><button class="btn btn-ghost" data-login="gitee">连接 Gitee</button><button class="btn btn-ghost" data-login="demo">演示数据</button></div>')
+      +(EDITION==='desktop'?'':'<div class="action-row" style="justify-content:center;margin-top:var(--s4)"><button class="btn btn-primary" data-login="github">连接 GitHub</button><button class="btn btn-ghost" data-login="gitee">连接 Gitee</button></div>')
       +'</div>';
     $('#acctSummary').textContent='0 个账号 · 0 个已授权';
     renderSideAccount();
@@ -4789,7 +4788,7 @@ function runSelfTest(){
   /* ---- v9：登录门 ---- */
   t('开发副本默认不显示登录门',getComputedStyle($('#loginGate')).display==='none');
   showGate();
-  t('登录门列出 3 种进入方式',$('#loginGate').style.display!=='none'&&$$('#loginGate [data-login]').length===3);
+  t('登录门列出 2 种连接方式',$('#loginGate').style.display!=='none'&&$$('#loginGate [data-login]').length===2&&$$('#loginGate [data-login="demo"]').length===0);
   t('真实登录入口存在',typeof githubLogin==='function'&&typeof ghRepoToLocal==='function'&&typeof submitPat==='function');
   t('令牌格式校验',ghTokenFormatOk('ghp_'+'a'.repeat(36))&&ghTokenFormatOk('github_pat_'+'b'.repeat(30))&&!ghTokenFormatOk('short')&&!ghTokenFormatOk('ghp_with space'),'ok');
   const sampleRepo=ghRepoToLocal({id:7,name:'demo-app',full_name:'demoOrg/demo-app',default_branch:'main',size:2048,language:'JavaScript',description:'示例',pushed_at:'2026-11-06T00:00:00Z'});
