@@ -1,6 +1,6 @@
 {
   "name": "repoflow-hub",
-  "version": "0.8.2",
+  "version": "0.8.3",
   "private": true,
   "description": "面向独立全栈开发者的多仓库 Git 管理桌面工具 · 高保真交互原型",
   "scripts": {

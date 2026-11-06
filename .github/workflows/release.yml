@@ -1,6 +1,6 @@
 name: Release Desktop Packages
 
-# 推送形如 v0.8.0 的 tag 时，构建 Windows / Linux 离线包并发布到 GitHub Release。
+# 推送形如 v0.8.3 的 tag 时，构建 Windows / Linux 离线包并发布到 GitHub Release。
 on:
   push:
     tags: ['v*']
@@ -24,7 +24,33 @@ jobs:
       - name: Upload packages to Release
         uses: softprops/action-gh-release@v2
         with:
+          name: RepoFlow Hub ${{ github.ref_name }}
+          body: |
+            ## RepoFlow Hub ${{ github.ref_name }} · 离线版
+
+            ### 下载
+            | 平台 | 文件 | 启动方式 |
+            | --- | --- | --- |
+            | Windows x64 | `RepoFlow-Hub-*-windows-x64.zip` | 解压后双击 `start.cmd` |
+            | Linux x64 | `RepoFlow-Hub-*-linux-x64.tar.gz` | 解压后 `./start.sh` |
+            | 校验 | `SHA256SUMS.txt` | `sha256sum -c SHA256SUMS.txt` |
+
+            ### 使用步骤
+            1. 解压整个包（不要只单独复制启动脚本）。
+            2. Windows 双击 `start.cmd`；Linux 执行 `chmod +x start.sh && ./start.sh`。
+            3. 进入应用后，点驾驶舱右上角 **扫描本地文件夹**，选择项目目录或包含多个仓库的父目录。
+            4. 只读读取 `.git` 中的 HEAD / config / refs / logs，不会修改或上传任何文件。
+
+            ### 说明
+            - 离线版不联网、无需登录，数据只在本机浏览器内。
+            - 脏工作区、未推送提交与准确体积需要真正运行 git，页面显示 0 或「—」是正常的。
+            - 推送 / 删除等写操作仍为原型模拟，不会改动任何仓库。
+            - 需要本机安装 Chrome / Chromium / Edge；缺失时会退回系统默认浏览器。
+
+            在线版：https://github.zhangwenle.com/
+            源码与文档：https://github.com/LeChuangDev/RepoFlow-Hub
           files: |
             dist/*.zip
             dist/*.tar.gz
-          generate_release_notes: true
+            dist/SHA256SUMS.txt
+          generate_release_notes: false
