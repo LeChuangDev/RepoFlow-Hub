@@ -197,7 +197,7 @@ npm run package                         # 生成 dist/ 下的安装包与校验�
 
 ```bash
 git tag v0.8.5
-git push origin v0.8.4
+git push origin v0.8.5
 ```
 
 网站版部署到 EdgeOne Pages：
